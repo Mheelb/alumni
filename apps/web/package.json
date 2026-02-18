@@ -9,9 +9,13 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@alumni/shared-schema": "workspace:*",
+    "@tailwindcss/vite": "^4.1.18",
     "@tanstack/vue-query": "^5.92.9",
     "@tanstack/vue-table": "^8.21.3",
+    "@vueuse/core": "^14.2.1",
     "axios": "^1.13.5",
+    "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "lucide-vue-next": "^0.574.0",
     "radix-vue": "^1.9.17",
@@ -21,12 +25,12 @@
     "zod": "^4.3.6"
   },
   "devDependencies": {
-    "@vitejs/plugin-vue": "^5.0.5",
+    "@vitejs/plugin-vue": "^6.0.4",
     "autoprefixer": "^10.4.24",
     "postcss": "^8.5.6",
     "tailwindcss": "^4.1.18",
     "typescript": "^5.2.2",
-    "vite": "^5.3.1",
+    "vite": "^7.3.1",
     "vue-tsc": "^2.0.21"
   }
 }
