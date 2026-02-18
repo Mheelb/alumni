@@ -1,0 +1,1 @@
+{"name": "alumni", "workspaces": ["apps/*"], "scripts": {"dev:api": "bun --cwd apps/api dev", "dev:web": "bun --cwd apps/web dev"}}

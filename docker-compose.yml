@@ -1,0 +1,47 @@
+services:
+  mongodb:
+    image: mongo:latest
+    container_name: alumni-mongodb
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongodb_data:/data/db
+
+  api:
+    build:
+      context: .
+      dockerfile: apps/api/Dockerfile
+    container_name: alumni-api
+    ports:
+      - "3000:3000"
+    environment:
+      - MONGO_URI=mongodb://mongodb:27017/alumni
+      - PORT=3000
+    volumes:
+      - .:/app
+      - /app/node_modules
+      - /app/apps/api/node_modules
+      - /app/apps/web/node_modules
+    # Command is already in Dockerfile, but explicitly stating it here
+    command: bun run --cwd apps/api dev
+    depends_on:
+      - mongodb
+
+  web:
+    build:
+      context: .
+      dockerfile: apps/web/Dockerfile
+    container_name: alumni-web
+    ports:
+      - "5173:5173"
+    volumes:
+      - .:/app
+      - /app/node_modules
+      - /app/apps/api/node_modules
+      - /app/apps/web/node_modules
+    command: bun run --cwd apps/web dev --host
+    depends_on:
+      - api
+
+volumes:
+  mongodb_data:
