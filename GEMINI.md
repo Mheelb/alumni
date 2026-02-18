@@ -1,111 +1,92 @@
+# Project Context: Alumni Platform
+
+## Goal
+A comprehensive platform to manage and track alumni data, featuring a modern web interface, a robust API, and automated scraping capabilities to keep information synchronized.
+
+## Architecture
+
+The project is structured as a **Monorepo** using **Nx** and **Bun** for workspace management and performance.
+
+### 1. Structure
+- `apps/api`: Backend service built with **Fastify**, **Bun**, and **Mongoose**.
+- `apps/web`: Frontend application built with **Vue 3**, **Vite**, **Bun**, and **Shadcn-vue**.
+- `libs/shared-schema`: Shared **Zod** schemas and TypeScript types used by both frontend and backend to ensure data consistency.
+- `docs/`: Project documentation and guidelines.
+
+### 2. Frontend Stack
+- **Framework**: Vue 3 (Composition API, `<script setup>`)
+- **Styling**: Tailwind CSS + Shadcn-vue
+- **State/Data Fetching**: TanStack Query (Vue Query) + Axios
+- **Form Validation**: Zod (via shared-schema)
+- **Icons**: Lucide-vue-next
+- **Build Tool**: Vite (running on Bun)
+
+### 3. Backend Stack
+- **Runtime**: Bun
+- **Framework**: Fastify
+- **Database**: MongoDB (Mongoose ODM)
+- **Validation**: Zod (via shared-schema)
+- **Security**: @fastify/helmet, @fastify/cors
+
 ---
-description: Use Bun instead of Node.js, npm, pnpm, or vite.
-globs: "*.ts, *.tsx, *.html, *.css, *.js, *.jsx, package.json"
-alwaysApply: false
----
 
-Default to using Bun instead of Node.js.
+## Database & Data Models
 
-- Use `bun <file>` instead of `node <file>` or `ts-node <file>`
-- Use `bun test` instead of `jest` or `vitest`
-- Use `bun build <file.html|file.ts|file.css>` instead of `webpack` or `esbuild`
-- Use `bun install` instead of `npm install` or `yarn install` or `pnpm install`
-- Use `bun run <script>` instead of `npm run <script>` or `yarn run <script>` or `pnpm run <script>`
-- Use `bunx <package> <command>` instead of `npx <package> <command>`
-- Bun automatically loads .env, so don't use dotenv.
+### Shared Schema (`libs/shared-schema`)
+All data structures are defined using **Zod** to provide both runtime validation and TypeScript types.
 
-## APIs
+```typescript
+// libs/shared-schema/src/index.ts
+import { z } from 'zod';
 
-- `Bun.serve()` supports WebSockets, HTTPS, and routes. Don't use `express`.
-- `bun:sqlite` for SQLite. Don't use `better-sqlite3`.
-- `Bun.redis` for Redis. Don't use `ioredis`.
-- `Bun.sql` for Postgres. Don't use `pg` or `postgres.js`.
-- `WebSocket` is built-in. Don't use `ws`.
-- Prefer `Bun.file` over `node:fs`'s readFile/writeFile
-- Bun.$`ls` instead of execa.
-
-## Testing
-
-Use `bun test` to run tests.
-
-```ts#index.test.ts
-import { test, expect } from "bun:test";
-
-test("hello world", () => {
-  expect(1).toBe(1);
+export const AlumniSchema = z.object({
+  firstName: z.string().min(2, "First name must be at least 2 characters"),
+  lastName: z.string().min(2, "Last name must be at least 2 characters"),
+  email: z.string().email("Invalid email address"),
+  graduationYear: z.number().int().min(1900).max(new Date().getFullYear() + 10).optional(),
 });
+
+export type AlumniType = z.infer<typeof AlumniSchema>;
 ```
 
-## Frontend
+### Backend Models (`apps/api/src/models`)
+Mongoose models use the types inferred from the shared Zod schemas.
 
-Use HTML imports with `Bun.serve()`. Don't use `vite`. HTML imports fully support React, CSS, Tailwind.
+#### Alumni Model
+- **Collection**: `alumni`
+- **Fields**:
+  - `firstName` (String, Required)
+  - `lastName` (String, Required)
+  - `email` (String, Required, Unique)
+  - `graduationYear` (Number)
+  - `timestamps` (createdAt, updatedAt)
 
-Server:
+---
 
-```ts#index.ts
-import index from "./index.html"
+## Best Practices
 
-Bun.serve({
-  routes: {
-    "/": index,
-    "/api/users/:id": {
-      GET: (req) => {
-        return new Response(JSON.stringify({ id: req.params.id }));
-      },
-    },
-  },
-  // optional websocket support
-  websocket: {
-    open: (ws) => {
-      ws.send("Hello, world!");
-    },
-    message: (ws, message) => {
-      ws.send(message);
-    },
-    close: (ws) => {
-      // handle close
-    }
-  },
-  development: {
-    hmr: true,
-    console: true,
-  }
-})
-```
+### 1. Data Consistency
+- **Always** use the `shared-schema` for any data that travels between the frontend and backend.
+- Use `AlumniSchema.safeParse()` on the frontend before sending data.
+- Use the same schema on the backend to validate incoming requests.
 
-HTML files can import .tsx, .jsx or .js files directly and Bun's bundler will transpile & bundle automatically. `<link>` tags can point to stylesheets and Bun's CSS bundler will bundle.
+### 2. Development Workflow
+- Use **Bun** for all commands (`bun install`, `bun dev`, `bun test`).
+- Run the full stack locally using the root scripts:
+  - `bun dev:api`
+  - `bun dev:web`
 
-```html#index.html
-<html>
-  <body>
-    <h1>Hello, world!</h1>
-    <script type="module" src="./frontend.tsx"></script>
-  </body>
-</html>
-```
+### 3. Frontend Guidelines
+- **Component-Driven**: Build reusable components in `src/components/ui` (Shadcn-vue).
+- **Feature-Based**: Organize domain logic in `src/features/`.
+- **Composition API**: Use `<script setup>` and composables for better logic reuse.
+- **Visuals**: Maintain a clean, professional aesthetic using Shadcn-vue's design system.
 
-With the following `frontend.tsx`:
+### 4. Backend Guidelines
+- **Surgical Updates**: When modifying the API, ensure all routes are properly typed and validated.
+- **Fastify Plugins**: Use plugins for modularity (CORS, Helmet, etc.).
+- **Error Handling**: Return clear, structured error messages (compatible with Zod issues if possible).
 
-```tsx#frontend.tsx
-import React from "react";
-import { createRoot } from "react-dom/client";
-
-// import .css files directly and it works
-import './index.css';
-
-const root = createRoot(document.body);
-
-export default function Frontend() {
-  return <h1>Hello, world!</h1>;
-}
-
-root.render(<Frontend />);
-```
-
-Then, run index.ts
-
-```sh
-bun --hot ./index.ts
-```
-
-For more information, read the Bun API docs in `node_modules/bun-types/docs/**.mdx`.
+### 5. Scraping (Future)
+- Use **Playwright** for automated data collection.
+- Scraping logic should be isolated and follow the shared schema for data ingestion.
