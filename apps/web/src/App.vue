@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { Button } from '@/components/ui';
-import { GraduationCap, Github, LifeBuoy } from 'lucide-vue-next';
+import { GraduationCap, Github, LifeBuoy, Users } from 'lucide-vue-next';
 import { authClient } from '@/lib/auth-client';
 import { RouterView, RouterLink, useRouter } from 'vue-router';
 
@@ -24,6 +24,14 @@ async function handleLogout() {
         </RouterLink>
 
         <nav class="flex items-center gap-4">
+          <template v-if="session.data?.user">
+            <RouterLink to="/annuaire">
+              <Button variant="ghost" size="sm" class="hidden sm:flex items-center gap-2">
+                <Users class="h-4 w-4" />
+                Annuaire
+              </Button>
+            </RouterLink>
+          </template>
           <Button variant="ghost" size="sm" class="hidden sm:flex items-center gap-2">
             <LifeBuoy class="h-4 w-4" />
             Support
@@ -33,11 +41,11 @@ async function handleLogout() {
           </Button>
           <div class="h-6 w-px bg-border hidden sm:block"></div>
           <template v-if="session.data?.user">
-            <Button variant="outline" size="sm" @click="handleLogout">Logout</Button>
+            <Button variant="outline" size="sm" @click="handleLogout">Déconnexion</Button>
           </template>
           <template v-else>
             <RouterLink to="/login">
-              <Button variant="default" size="sm">Login</Button>
+              <Button variant="default" size="sm">Connexion</Button>
             </RouterLink>
           </template>
         </nav>
