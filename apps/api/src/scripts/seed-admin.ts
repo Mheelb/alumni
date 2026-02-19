@@ -5,7 +5,7 @@ const MONGO_URI = process.env.MONGO_URI || 'mongodb://localhost:27017/alumni';
 
 async function seedAdmin() {
   try {
-    console.log("Auth options emailPassword:", JSON.stringify(auth.options.emailPassword, null, 2));
+    console.log("Auth options emailPassword:", JSON.stringify(auth.options.emailAndPassword, null, 2));
     await mongoose.connect(MONGO_URI);
     console.log("Connected to MongoDB");
 

@@ -12,6 +12,9 @@ export const auth = betterAuth({
     enabled: true,
     autoSignIn: false,
     requireEmailVerification: false,
+    signUp: {
+      enabled: true,
+    },
   },
   user: {
     additionalFields: {

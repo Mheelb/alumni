@@ -45,15 +45,28 @@ fastify.get('/health', async () => {
   };
 });
 
-fastify.get('/seed', async () => {
-  const sampleAlumni = new Alumni({
-    firstName: 'John',
-    lastName: 'Doe',
-    email: `john.doe.${Date.now()}@example.com`,
-    graduationYear: 2024
-  });
-  await sampleAlumni.save();
-  return { message: 'Sample alumni created!', data: sampleAlumni };
+fastify.get('/alumni/:id', async (request, reply) => {
+  try {
+    const { id } = request.params as { id: string };
+    const alumni = await Alumni.findById(id);
+    if (!alumni) {
+      return reply.status(404).send({ message: 'Alumni not found' });
+    }
+    return alumni;
+  } catch (err: any) {
+    fastify.log.error(err);
+    return reply.status(400).send({ message: 'Invalid ID format' });
+  }
+});
+
+fastify.get('/users/check-email/:email', async (request, reply) => {
+  try {
+    const { email } = request.params as { email: string };
+    const user = await mongoose.connection.db?.collection('user').findOne({ email });
+    return { exists: !!user };
+  } catch (err) {
+    return { exists: false };
+  }
 });
 
 fastify.post('/alumni', async (request, reply) => {
