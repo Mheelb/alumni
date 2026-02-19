@@ -3,6 +3,8 @@ import HomePage from './pages/HomePage.vue'
 import LoginPage from './pages/LoginPage.vue'
 import RegisterPage from './pages/RegisterPage.vue'
 import CreateAccountPage from './pages/admin/CreateAccountPage.vue'
+import AnnuairePage from './pages/AnnuairePage.vue'
+import ProfilDetailPage from './pages/ProfilDetailPage.vue'
 import { authClient } from './lib/auth-client'
 
 const router = createRouter({

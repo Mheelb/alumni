@@ -38,7 +38,7 @@ async function handleRegister() {
   const name = `${formData.value.firstName} ${formData.value.lastName}`.trim();
 
   isLoading.value = true;
-  const { data, error: authError } = await authClient.signUp.email({
+  const { error: authError } = await authClient.signUp.email({
     email: formData.value.email,
     password: formData.value.password,
     name: name,
@@ -56,7 +56,7 @@ async function handleRegister() {
     formData.value = { email: '', password: '', firstName: '', lastName: '' };
     generatePassword(); // Régénérer pour le prochain
   }
-  
+
   isLoading.value = false;
 }
 </script>
