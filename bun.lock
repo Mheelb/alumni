@@ -18,6 +18,7 @@
     "apps/api": {
       "name": "api",
       "dependencies": {
+        "@alumni/shared-schema": "workspace:*",
         "@fastify/cors": "^11.2.0",
         "@fastify/helmet": "^13.0.2",
         "@fastify/swagger": "^9.7.0",
@@ -56,6 +57,7 @@
         "radix-vue": "^1.9.17",
         "shadcn-vue": "^2.4.3",
         "tailwind-merge": "^3.4.1",
+        "tailwindcss-animate": "^1.0.7",
         "vue": "^3.4.29",
         "vue-router": "^5.0.2",
         "zod": "^4.3.6",
@@ -1950,6 +1952,8 @@
     "tailwind-merge": ["tailwind-merge@3.4.1", "", {}, "sha512-2OA0rFqWOkITEAOFWSBSApYkDeH9t2B3XSJuI4YztKBzK3mX0737A2qtxDZ7xkw9Zfh0bWl+r34sF3HXV+Ig7Q=="],
 
     "tailwindcss": ["tailwindcss@4.1.18", "", {}, "sha512-4+Z+0yiYyEtUVCScyfHCxOYP06L5Ne+JiHhY2IjR2KWMIWhJOYZKLSGZaP5HkZ8+bY0cxfzwDE5uOmzFXyIwxw=="],
+
+    "tailwindcss-animate": ["tailwindcss-animate@1.0.7", "", { "peerDependencies": { "tailwindcss": ">=3.0.0 || insiders" } }, "sha512-bl6mpH3T7I3UFxuvDEXLxy/VuFxBk5bbzplh7tXI68mwMokNYd1t9qPBHlnyTwfa4JGC4zP516I1hYYtQ/vspA=="],
 
     "tapable": ["tapable@2.3.0", "", {}, "sha512-g9ljZiwki/LfxmQADO3dEY1CbpmXT5Hm2fJ+QaGKwSXUylMybePR7/67YW7jOrrvjEgL1Fmz5kzyAjWVWLlucg=="],
 

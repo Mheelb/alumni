@@ -18,29 +18,25 @@ const isLoading = ref(false);
 
 async function handleRegister() {
   error.value = '';
-  
-  // Basic validation
+
   const validation = SignUpSchema.safeParse(formData.value);
   if (!validation.success) {
-    error.value = validation.error.errors[0].message;
+    error.value = validation.error.issues[0].message;
     return;
   }
 
   isLoading.value = true;
-  const { data, error: authError } = await authClient.signUp.email({
+  const { error: authError } = await authClient.signUp.email({
     email: formData.value.email,
     password: formData.value.password,
-    firstName: formData.value.firstName,
-    lastName: formData.value.lastName,
-    role: formData.value.role,
-    graduationYear: formData.value.graduationYear,
+    name: `${formData.value.firstName} ${formData.value.lastName}`,
     callbackURL: '/',
   });
 
   if (authError) {
-    error.value = authError.message || 'An error occurred during registration';
+    error.value = authError.message || 'Une erreur est survenue lors de l\'inscription';
   }
-  
+
   isLoading.value = false;
 }
 </script>
@@ -48,43 +44,43 @@ async function handleRegister() {
 <template>
   <Card class="w-[500px] mx-auto">
     <CardHeader>
-      <CardTitle>Register as Alumni</CardTitle>
-      <CardDescription>Create your account to stay connected with the community.</CardDescription>
+      <CardTitle>Créer un compte</CardTitle>
+      <CardDescription>Rejoignez la communauté des diplômés.</CardDescription>
     </CardHeader>
     <CardContent>
       <form @submit.prevent="handleRegister" class="grid gap-4">
         <div class="grid grid-cols-2 gap-4">
           <div class="space-y-2">
-            <Label for="firstName">First Name</Label>
-            <Input id="firstName" v-model="formData.firstName" placeholder="John" required />
+            <Label for="firstName">Prénom</Label>
+            <Input id="firstName" v-model="formData.firstName" placeholder="Alice" required />
           </div>
           <div class="space-y-2">
-            <Label for="lastName">Last Name</Label>
-            <Input id="lastName" v-model="formData.lastName" placeholder="Doe" required />
+            <Label for="lastName">Nom</Label>
+            <Input id="lastName" v-model="formData.lastName" placeholder="Dupont" required />
           </div>
         </div>
         <div class="space-y-2">
           <Label for="email">Email</Label>
-          <Input id="email" v-model="formData.email" type="email" placeholder="john.doe@example.com" required />
+          <Input id="email" v-model="formData.email" type="email" placeholder="alice.dupont@exemple.com" required />
         </div>
         <div class="space-y-2">
-          <Label for="password">Password</Label>
+          <Label for="password">Mot de passe</Label>
           <Input id="password" v-model="formData.password" type="password" required />
         </div>
         <div class="space-y-2">
-          <Label for="graduationYear">Graduation Year</Label>
+          <Label for="graduationYear">Année de promotion</Label>
           <Input id="graduationYear" v-model.number="formData.graduationYear" type="number" required />
         </div>
-        <div v-if="error" class="text-sm text-red-500">{{ error }}</div>
+        <div v-if="error" class="text-sm text-destructive">{{ error }}</div>
       </form>
     </CardContent>
     <CardFooter class="flex flex-col gap-2">
       <Button class="w-full" :disabled="isLoading" @click="handleRegister">
-        {{ isLoading ? 'Creating account...' : 'Register' }}
+        {{ isLoading ? 'Création…' : 'Créer mon compte' }}
       </Button>
       <div class="text-sm text-muted-foreground text-center">
-        Already have an account? 
-        <router-link to="/login" class="text-primary hover:underline">Login</router-link>
+        Déjà un compte ?
+        <router-link to="/login" class="text-primary hover:underline">Se connecter</router-link>
       </div>
     </CardFooter>
   </Card>
