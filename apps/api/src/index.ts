@@ -3,6 +3,7 @@ import cors from '@fastify/cors';
 import helmet from '@fastify/helmet';
 import mongoose from 'mongoose';
 import { Alumni } from './models/Alumni';
+import { auth } from './lib/auth';
 
 const fastify = Fastify({ logger: true });
 
@@ -10,6 +11,16 @@ const MONGO_URI = process.env.MONGO_URI || 'mongodb://localhost:27017/alumni';
 
 fastify.register(helmet);
 fastify.register(cors);
+
+// BetterAuth handler
+fastify.all('/api/auth/*', async (request, reply) => {
+  const response = await auth.handler(request.raw);
+  reply.status(response.status);
+  response.headers.forEach((value, key) => {
+    reply.header(key, value);
+  });
+  return response.text();
+});
 
 fastify.get('/health', async () => {
   return { 
