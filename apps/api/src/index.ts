@@ -94,19 +94,19 @@ fastify.get('/health', async () => {
   };
 });
 
-fastify.get('/alumni/:id', async (request, reply) => {
-  try {
-    const { id } = request.params as { id: string };
-    const alumni = await Alumni.findById(id);
-    if (!alumni) {
-      return reply.status(404).send({ message: 'Alumni not found' });
-    }
-    return alumni;
-  } catch (err: any) {
-    fastify.log.error(err);
-    return reply.status(400).send({ message: 'Invalid ID format' });
-  }
-});
+// fastify.get('/alumni/:id', async (request, reply) => {
+//   try {
+//     const { id } = request.params as { id: string };
+//     const alumni = await Alumni.findById(id);
+//     if (!alumni) {
+//       return reply.status(404).send({ message: 'Alumni not found' });
+//     }
+//     return alumni;
+//   } catch (err: any) {
+//     fastify.log.error(err);
+//     return reply.status(400).send({ message: 'Invalid ID format' });
+//   }
+// });
 
 fastify.get('/users/check-email/:email', async (request, reply) => {
   try {
@@ -116,6 +116,7 @@ fastify.get('/users/check-email/:email', async (request, reply) => {
   } catch (err) {
     return { exists: false };
   }
+});
 // Helper: build filter query from query params
 function buildAlumniFilter(query: Record<string, string | undefined>) {
   const filter: Record<string, unknown> = {};

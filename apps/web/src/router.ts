@@ -12,6 +12,8 @@ const router = createRouter({
   routes: [
     { path: '/', component: HomePage },
     { path: '/login', component: LoginPage },
+    { path: '/annuaire', component: AnnuairePage, meta: { requiresAuth: true } },
+    { path: '/annuaire/:id', component: ProfilDetailPage, meta: { requiresAuth: true }},
     { 
       path: '/register', 
       component: RegisterPage,
