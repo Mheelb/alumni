@@ -5,6 +5,8 @@ import mongoose from 'mongoose';
 import { Alumni } from './models/Alumni';
 import { auth } from './lib/auth';
 import { AlumniProfileSchema, AlumniUpdateSchema } from '@alumni/shared-schema';
+import { scraperRoutes } from './routes/scraper';
+import { requireAdmin, requireAuth } from './lib/middleware';
 
 const fastify = Fastify({ logger: true });
 const BASE_URL = process.env.BETTER_AUTH_BASE_URL || 'http://localhost:3000';
@@ -17,53 +19,7 @@ fastify.register(cors, {
   methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
 });
 
-// Helper to get session from request
-async function getSession(request: any) {
-  try {
-    const headers = new Headers();
-    for (const [key, value] of Object.entries(request.headers)) {
-      if (value) {
-        if (Array.isArray(value)) {
-          headers.set(key, value.join(', '));
-        } else {
-          headers.set(key, String(value));
-        }
-      }
-    }
-    
-    // BetterAuth expect standard Request object for its helpers sometimes
-    // But auth.api.getSession usually takes headers directly
-    const session = await auth.api.getSession({
-      headers: headers,
-    });
-    return session;
-  } catch (error) {
-    fastify.log.error('Error in getSession:');
-    fastify.log.error(error);
-    return null;
-  }
-}
-
-// Middleware: Require Logged In
-const requireAuth = async (request: any, reply: any) => {
-  const session = await getSession(request);
-  if (!session) {
-    return reply.status(401).send({ status: 'error', message: 'Non authentifié' });
-  }
-  request.session = session;
-};
-
-// Middleware: Require Admin
-const requireAdmin = async (request: any, reply: any) => {
-  const session = await getSession(request);
-  if (!session) {
-    return reply.status(401).send({ status: 'error', message: 'Non authentifié' });
-  }
-  if (session.user.role !== 'admin') {
-    return reply.status(403).send({ status: 'error', message: 'Accès refusé : Administrateur uniquement' });
-  }
-  request.session = session;
-};
+fastify.register(scraperRoutes);
 
 // BetterAuth handler
 fastify.all('/api/auth/*', async (request, reply) => {

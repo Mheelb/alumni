@@ -27,6 +27,7 @@ export const AlumniProfileSchema = z.object({
   company: z.string().optional(),
   jobTitle: z.string().optional(),
   phone: z.string().optional(),
+  avatarUrl: z.string().url("URL de l'avatar invalide").optional().or(z.literal('')),
   linkedinUrl: z.string().url("URL LinkedIn invalide").optional().or(z.literal('')),
   status: AlumniStatusEnum.default('invited'),
   isActive: z.boolean().default(true),

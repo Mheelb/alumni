@@ -11,6 +11,7 @@ const AlumniMongoSchema = new mongoose.Schema<AlumniProfileType>({
   company: String,
   jobTitle: String,
   phone: String,
+  avatarUrl: String,
   linkedinUrl: String,
   status: { type: String, enum: ['invited', 'registered', 'completed'], default: 'invited' },
   isActive: { type: Boolean, default: true },

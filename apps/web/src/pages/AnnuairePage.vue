@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
+import { useQueryClient } from '@tanstack/vue-query'
 import { authClient } from '@/lib/auth-client'
 import {
   useAlumniList,
@@ -42,10 +43,50 @@ import {
   ChevronLeft,
   ChevronRight,
   Loader2,
+  RefreshCw,
 } from 'lucide-vue-next'
+import axios from 'axios'
 
 const router = useRouter()
+const qc = useQueryClient()
 const isAdmin = ref(false)
+const isSyncing = ref(false)
+
+async function handleSyncAll() {
+  // @ts-ignore
+  const targets = (alumni.value || []).filter(a => a.linkedinUrl)
+  if (targets.length === 0) {
+    alert('Aucun profil avec LinkedIn sur cette page.')
+    return
+  }
+  
+  const estimatedTime = targets.length * 5 // 5s per person
+  if (!confirm(`Voulez-vous synchroniser ${targets.length} profils de cette page ?\nCela prendra environ ${estimatedTime} secondes.`)) {
+    return
+  }
+
+  isSyncing.value = true
+  let successCount = 0
+  let errorCount = 0
+
+  for (const [index, p] of targets.entries()) {
+    try {
+      if (index > 0) await new Promise(resolve => setTimeout(resolve, 5000))
+      
+      // @ts-ignore
+      await axios.post(`http://localhost:3000/scraper/sync/${p._id}`, {}, { withCredentials: true })
+      successCount++
+    } catch (e) {
+      // @ts-ignore
+      console.error(`Failed to sync ${p.firstName} ${p.lastName}`, e)
+      errorCount++
+    }
+  }
+  
+  isSyncing.value = false
+  await qc.invalidateQueries({ queryKey: ['alumni'] })
+  alert(`Synchronisation terminée : ${successCount} succès, ${errorCount} erreurs.`)
+}
 
 onMounted(async () => {
   const { data: session } = await authClient.getSession()
@@ -162,6 +203,10 @@ const promoYears = Array.from({ length: 30 }, (_, i) => currentYear - i)
         </p>
       </div>
       <div v-if="isAdmin" class="flex gap-2">
+        <Button variant="outline" size="sm" class="gap-2" @click="handleSyncAll" :disabled="isSyncing">
+          <RefreshCw class="h-4 w-4" :class="{ 'animate-spin': isSyncing }" />
+          {{ isSyncing ? 'Sync...' : 'Sync LinkedIn' }}
+        </Button>
         <Button variant="outline" size="sm" class="gap-2" @click="handleExport">
           <Download class="h-4 w-4" />
           Exporter CSV
