@@ -21,10 +21,5 @@ export const auth = betterAuth({
       graduationYear: { type: "number", required: false },
     },
   },
-  advanced: {
-    defaultCookieAttributes: {
-      sameSite: "none",
-      secure: true,
-    },
-  },
+  trustedOrigins: [process.env.WEB_URL || "http://localhost:5173"],
 });

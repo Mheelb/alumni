@@ -6,20 +6,36 @@ import { Alumni } from './models/Alumni';
 import { auth } from './lib/auth';
 
 const fastify = Fastify({ logger: true });
+const BASE_URL = process.env.BETTER_AUTH_BASE_URL || 'http://localhost:3000';
 
 const MONGO_URI = process.env.MONGO_URI || 'mongodb://localhost:27017/alumni';
 
 fastify.register(helmet);
-fastify.register(cors);
+fastify.register(cors, {
+  origin: process.env.WEB_URL || 'http://localhost:5173',
+  credentials: true,
+});
 
 // BetterAuth handler
 fastify.all('/api/auth/*', async (request, reply) => {
-  const response = await auth.handler(request.raw);
+  const url = new URL(request.url, BASE_URL);
+  const headers = new Headers();
+  for (const [key, value] of Object.entries(request.headers)) {
+    if (value) headers.set(key, Array.isArray(value) ? value.join(', ') : value);
+  }
+
+  const webRequest = new Request(url.toString(), {
+    method: request.method,
+    headers,
+    body: ['GET', 'HEAD'].includes(request.method) ? undefined : JSON.stringify(request.body),
+  });
+
+  const response = await auth.handler(webRequest);
   reply.status(response.status);
   response.headers.forEach((value, key) => {
     reply.header(key, value);
   });
-  return response.text();
+  return reply.send(await response.text());
 });
 
 fastify.get('/health', async () => {

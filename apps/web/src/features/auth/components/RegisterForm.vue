@@ -1,10 +1,7 @@
 <script setup lang="ts">
 import { ref } from 'vue';
 import { authClient } from '@/lib/auth-client';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
+import { Button, Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle, Input, Label } from '@/components/ui';
 import { SignUpSchema, type SignUpType } from '@alumni/shared-schema';
 
 const formData = ref<SignUpType>({

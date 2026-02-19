@@ -23,6 +23,7 @@
     "shadcn-vue": "^2.4.3",
     "tailwind-merge": "^3.4.1",
     "vue": "^3.4.29",
+    "vue-router": "^5.0.2",
     "zod": "^4.3.6"
   },
   "devDependencies": {
