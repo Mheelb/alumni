@@ -117,6 +117,78 @@ fastify.get('/users/check-email/:email', async (request, reply) => {
     return { exists: false };
   }
 });
+
+// Admin: List all users
+fastify.get('/admin/users', { preHandler: requireAdmin }, async (request, reply) => {
+  try {
+    const query = request.query as Record<string, string | undefined>;
+    const filter: Record<string, any> = {};
+
+    if (query.role) {
+      filter.role = query.role;
+    }
+
+    if (query.status === 'active') {
+      filter.$or = [
+        { banned: { $ne: true } },
+        { banned: { $exists: false } }
+      ];
+    } else if (query.status === 'inactive') {
+      filter.banned = true;
+    }
+
+    const users = await mongoose.connection.db?.collection('user').find(filter).toArray();
+    // Return users with their ban status from better-auth
+    return { status: 'success', data: users };
+  } catch (err) {
+    fastify.log.error(err);
+    return reply.status(500).send({ status: 'error', message: 'Erreur lors de la récupération des utilisateurs' });
+  }
+});
+
+// Admin: Toggle user status (Active/Inactive)
+fastify.patch('/admin/users/:id/toggle-status', { preHandler: requireAdmin }, async (request, reply) => {
+  try {
+    const { id } = request.params as { id: string };
+    
+    // Better-Auth usually uses a string 'id' field. 
+    // We search by 'id' OR '_id' (converting to ObjectId if valid)
+    const query: any = { $or: [{ id: id }] };
+    if (mongoose.Types.ObjectId.isValid(id)) {
+      query.$or.push({ _id: new mongoose.Types.ObjectId(id) });
+    }
+
+    const user = await mongoose.connection.db?.collection('user').findOne(query);
+    
+    if (!user) {
+      return reply.status(404).send({ status: 'error', message: 'Utilisateur introuvable' });
+    }
+
+    // Better-Auth uses the 'id' field for its internal API calls
+    const betterAuthId = user.id || user._id.toString();
+    const isBanned = !!user.banned || !!(user as any).isBanned;
+
+    if (isBanned) {
+      await auth.api.unbanUser({
+        headers: request.headers, // Pass request headers to maintain context
+        body: { userId: betterAuthId }
+      });
+      return { status: 'success', message: 'Compte réactivé avec succès' };
+    } else {
+      await auth.api.banUser({
+        headers: request.headers,
+        body: { 
+          userId: betterAuthId,
+          reason: "Désactivé par l'administrateur" 
+        }
+      });
+      return { status: 'success', message: 'Compte désactivé avec succès' };
+    }
+  } catch (err) {
+    fastify.log.error(err);
+    return reply.status(500).send({ status: 'error', message: 'Erreur lors du changement de statut du compte' });
+  }
+});
 // Helper: build filter query from query params
 function buildAlumniFilter(query: Record<string, string | undefined>) {
   const filter: Record<string, unknown> = {};

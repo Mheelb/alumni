@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { Button } from '@/components/ui';
-import { GraduationCap, Github, LifeBuoy, Users } from 'lucide-vue-next';
+import { GraduationCap, Github, LifeBuoy, Users, ShieldCheck } from 'lucide-vue-next';
 import { authClient } from '@/lib/auth-client';
 import { RouterView, RouterLink, useRouter } from 'vue-router';
 
@@ -29,6 +29,13 @@ async function handleLogout() {
               <Button variant="ghost" size="sm" class="hidden sm:flex items-center gap-2">
                 <Users class="h-4 w-4" />
                 Annuaire
+              </Button>
+            </RouterLink>
+            <!-- @ts-ignore - role exists on user -->
+            <RouterLink v-if="session.data.user.role === 'admin'" to="/admin/users">
+              <Button variant="ghost" size="sm" class="hidden sm:flex items-center gap-2">
+                <ShieldCheck class="h-4 w-4" />
+                Comptes
               </Button>
             </RouterLink>
           </template>

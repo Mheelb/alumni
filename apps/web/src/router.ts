@@ -3,6 +3,7 @@ import HomePage from './pages/HomePage.vue'
 import LoginPage from './pages/LoginPage.vue'
 import RegisterPage from './pages/RegisterPage.vue'
 import CreateAccountPage from './pages/admin/CreateAccountPage.vue'
+import UsersPage from './pages/admin/UsersPage.vue'
 import AnnuairePage from './pages/AnnuairePage.vue'
 import ProfilDetailPage from './pages/ProfilDetailPage.vue'
 import { authClient } from './lib/auth-client'
@@ -22,6 +23,11 @@ const router = createRouter({
     { 
       path: '/admin/create-account/:alumniId', 
       component: CreateAccountPage,
+      meta: { requiresAdmin: true }
+    },
+    { 
+      path: '/admin/users', 
+      component: UsersPage,
       meta: { requiresAdmin: true }
     },
   ],
