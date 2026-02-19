@@ -2,12 +2,14 @@
 import { Button } from '@/components/ui';
 import { GraduationCap, Github, LifeBuoy } from 'lucide-vue-next';
 import { authClient } from '@/lib/auth-client';
-import { RouterView, RouterLink } from 'vue-router';
+import { RouterView, RouterLink, useRouter } from 'vue-router';
 
-const { data: session } = authClient.useSession();
+const router = useRouter();
+const session = authClient.useSession();
 
 async function handleLogout() {
   await authClient.signOut();
+  router.push('/login');
 }
 </script>
 
@@ -30,7 +32,7 @@ async function handleLogout() {
             <Github class="h-5 w-5" />
           </Button>
           <div class="h-6 w-px bg-border hidden sm:block"></div>
-          <template v-if="session?.user">
+          <template v-if="session.data?.user">
             <Button variant="outline" size="sm" @click="handleLogout">Logout</Button>
           </template>
           <template v-else>
