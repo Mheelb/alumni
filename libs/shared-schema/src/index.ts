@@ -44,6 +44,7 @@ export const SignUpSchema = z.object({
   lastName: z.string().min(2, "Le nom doit contenir au moins 2 caractères"),
   role: UserRole.default('alumni'),
   graduationYear: z.number().int().min(1900).max(new Date().getFullYear() + 10).optional(),
+  alumniId: z.string().optional(),
 });
 
 export type SignUpType = z.infer<typeof SignUpSchema>;

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, onMounted, computed } from 'vue';
+import { ref, onMounted, computed, toRef } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { authClient } from '@/lib/auth-client';
 import { useQuery } from '@tanstack/vue-query';
@@ -16,11 +16,12 @@ import {
   Label 
 } from '@/components/ui';
 import { Loader2, ShieldCheck, User, Mail, Lock, RefreshCw, AlertCircle, Eye, EyeOff } from 'lucide-vue-next';
-import { type AlumniType } from '@alumni/shared-schema';
+import { useUpdateAlumni, useAlumniDetail } from '@/features/alumni/composables/useAlumni';
 
 const route = useRoute();
 const router = useRouter();
 const alumniId = route.params.alumniId as string;
+const updateAlumni = useUpdateAlumni();
 
 const password = ref('');
 const error = ref('');
@@ -28,32 +29,16 @@ const isLoading = ref(false);
 const isSuccess = ref(false);
 const showPassword = ref(false);
 
-// Fetch alumni details
-const { data: alumni, isLoading: isFetchingAlumni } = useQuery({
-  queryKey: ['alumni', alumniId],
-  queryFn: async () => {
-    // Mode Test : Retourne des données fictives si l'ID est 'test'
-    if (alumniId === 'test') {
-      return {
-        firstName: 'Jean',
-        lastName: 'Test',
-        email: 'jean.test@example.com',
-        graduationYear: 2024
-      } as AlumniType;
-    }
-    const response = await axios.get(`http://localhost:3000/alumni/${alumniId}`);
-    return response.data as AlumniType;
-  },
-  enabled: !!alumniId,
-  retry: alumniId === 'test' ? false : 3,
-});
+// Utilisation du composable partagé pour récupérer les détails de l'alumni
+// Cela garantit que withCredentials est présent et que l'URL est correcte
+const { data: alumni, isLoading: isFetchingAlumni } = useAlumniDetail(toRef(() => alumniId));
 
 // Check if user account already exists
 const { data: userAccountStatus, isLoading: isCheckingUser } = useQuery({
   queryKey: ['user-exists', alumni.value?.email],
   queryFn: async () => {
     if (!alumni.value?.email) return { exists: false };
-    const response = await axios.get(`http://localhost:3000/users/check-email/${alumni.value.email}`);
+    const response = await axios.get(`http://localhost:3000/users/check-email/${alumni.value.email}`, { withCredentials: true });
     return response.data as { exists: boolean };
   },
   enabled: computed(() => !!alumni.value?.email),
@@ -79,24 +64,50 @@ async function handleCreateAccount() {
   
   error.value = '';
   isLoading.value = true;
-  
-  const { data, error: authError } = await authClient.signUp.email({
+
+  const signUpData = {
     email: alumni.value.email,
     password: password.value,
     name: `${alumni.value.firstName} ${alumni.value.lastName}`,
     firstName: alumni.value.firstName,
     lastName: alumni.value.lastName,
-    role: 'alumni',
     graduationYear: alumni.value.graduationYear,
-  });
+    // @ts-ignore - alumniId is an additional field
+    alumniId: alumniId,
+  };
+
+  console.log('Données envoyées au signUp:', signUpData);
+  
+  const { data, error: authError } = await authClient.signUp.email(signUpData);
 
   if (authError) {
+    console.error('Erreur retournée par signUp:', authError);
     error.value = authError.message || 'Une erreur est survenue lors de la création du compte';
+    isLoading.value = false;
   } else {
-    isSuccess.value = true;
+    console.log('Succès signUp - Données retournées:', data);
+    
+    // Mettre à jour le statut de l'alumni en "inscrit"
+    try {
+      await updateAlumni.mutateAsync({
+        id: alumniId,
+        body: { status: 'registered' }
+      });
+      console.log('Statut alumni mis à jour en "registered"');
+      
+      isSuccess.value = true;
+      isLoading.value = false;
+      
+      // Redirection après un court délai pour laisser l'utilisateur voir le message de succès
+      setTimeout(() => {
+        router.push('/annuaire');
+      }, 1500);
+    } catch (updateErr) {
+      console.error('Erreur lors de la mise à jour du statut alumni:', updateErr);
+      error.value = "Compte créé mais impossible de mettre à jour le statut du profil.";
+      isLoading.value = false;
+    }
   }
-  
-  isLoading.value = false;
 }
 </script>
 
@@ -182,7 +193,7 @@ async function handleCreateAccount() {
           </div>
 
           <div v-if="isSuccess" class="bg-green-100 p-3 rounded text-sm text-green-700 font-medium border border-green-200">
-            Compte créé avec succès ! L'utilisateur peut maintenant se connecter.
+            Compte créé avec succès ! Statut mis à jour. Redirection...
           </div>
         </form>
       </template>
@@ -199,7 +210,7 @@ async function handleCreateAccount() {
         @click="handleCreateAccount"
       >
         <Loader2 v-if="isLoading" class="mr-2 h-5 w-5 animate-spin" />
-        {{ isLoading ? 'Création en cours...' : 'Créer le compte' }}
+        {{ isLoading ? 'Action en cours...' : 'Créer le compte' }}
       </Button>
       <Button variant="ghost" class="w-full" @click="router.back()">
         Retour
