@@ -1,8 +1,9 @@
 <script setup lang="ts">
 import { Button } from '@/components/ui';
-import { GraduationCap, Github, LifeBuoy, Users } from 'lucide-vue-next';
+import { Users } from 'lucide-vue-next';
 import { authClient } from '@/lib/auth-client';
 import { RouterView, RouterLink, useRouter } from 'vue-router';
+import logo from '@/assets/logo.svg';
 
 const router = useRouter();
 const session = authClient.useSession();
@@ -19,7 +20,7 @@ async function handleLogout() {
     <header class="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
       <div class="container flex h-16 items-center justify-between">
         <RouterLink to="/" class="flex items-center gap-2">
-          <GraduationCap class="h-6 w-6 text-primary" />
+          <img :src="logo" alt="Logo" class="h-8 w-auto" />
           <span class="text-xl font-bold tracking-tight">AlumniManager</span>
         </RouterLink>
 
@@ -32,13 +33,6 @@ async function handleLogout() {
               </Button>
             </RouterLink>
           </template>
-          <Button variant="ghost" size="sm" class="hidden sm:flex items-center gap-2">
-            <LifeBuoy class="h-4 w-4" />
-            Support
-          </Button>
-          <Button variant="ghost" size="icon" class="hidden sm:flex">
-            <Github class="h-5 w-5" />
-          </Button>
           <div class="h-6 w-px bg-border hidden sm:block"></div>
           <template v-if="session.data?.user">
             <Button variant="outline" size="sm" @click="handleLogout">Déconnexion</Button>
