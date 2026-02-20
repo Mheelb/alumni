@@ -3,6 +3,20 @@ import axios from 'axios'
 import type { Ref } from 'vue'
 import type { AlumniProfileType, AlumniUpdateType } from '@alumni/shared-schema'
 
+export interface StatsData {
+  total: number
+  byStatus: { invited: number; registered: number; completed: number }
+  activationRate: number
+  recentAlumni: Array<{
+    _id: string
+    firstName: string
+    lastName: string
+    email: string
+    status: string
+    createdAt: string
+  }>
+}
+
 const API = import.meta.env.VITE_API_URL || 'http://localhost:3000'
 
 export interface AlumniFilters {
@@ -90,6 +104,19 @@ export function useDeleteAlumni() {
     mutationFn: (id: string) =>
       axios.delete(`${API}/alumni/${id}`, { withCredentials: true }),
     onSuccess: () => qc.invalidateQueries({ queryKey: ['alumni'] }),
+  })
+}
+
+export function useStats(enabled: Ref<boolean>) {
+  return useQuery({
+    queryKey: ['stats'],
+    queryFn: async (): Promise<StatsData> => {
+      const { data } = await axios.get<{ status: string; data: StatsData }>(`${API}/stats`, {
+        withCredentials: true,
+      })
+      return data.data
+    },
+    enabled,
   })
 }
 

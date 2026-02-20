@@ -152,6 +152,19 @@ fastify.get('/alumni', { preHandler: requireAuth }, async (request, reply) => {
   });
 });
 
+// GET /alumni/me — must be before /alumni/:id
+fastify.get('/alumni/me', { preHandler: requireAuth }, async (request: any, reply) => {
+  const email = request.session?.user?.email
+  if (!email) {
+    return reply.status(401).send({ status: 'error', message: 'Non authentifié' })
+  }
+  const alumni = await Alumni.findOne({ email, isActive: true }).lean()
+  if (!alumni) {
+    return reply.status(404).send({ status: 'error', message: 'Profil introuvable' })
+  }
+  return reply.send({ status: 'success', data: alumni })
+})
+
 // GET /alumni/:id
 fastify.get('/alumni/:id', { preHandler: requireAuth }, async (request, reply) => {
   const { id } = request.params as { id: string };
@@ -211,6 +224,37 @@ fastify.patch('/alumni/:id/deactivate', { preHandler: requireAdmin }, async (req
   }
   return reply.send({ status: 'success', data: alumni });
 });
+
+// GET /stats
+fastify.get('/stats', { preHandler: requireAdmin }, async (_request, reply) => {
+  const [total, byStatusRaw, recentAlumni] = await Promise.all([
+    Alumni.countDocuments({ isActive: true }),
+    Alumni.aggregate<{ _id: string; count: number }>([
+      { $match: { isActive: true } },
+      { $group: { _id: '$status', count: { $sum: 1 } } },
+    ]),
+    Alumni.find({ isActive: true })
+      .sort({ createdAt: -1 })
+      .limit(5)
+      .select('firstName lastName email status createdAt')
+      .lean(),
+  ])
+
+  const byStatus = { invited: 0, registered: 0, completed: 0 }
+  for (const row of byStatusRaw) {
+    if (row._id === 'invited') byStatus.invited = row.count
+    else if (row._id === 'registered') byStatus.registered = row.count
+    else if (row._id === 'completed') byStatus.completed = row.count
+  }
+
+  const activated = byStatus.registered + byStatus.completed
+  const activationRate = total > 0 ? Math.round((activated / total) * 100) : 0
+
+  return reply.send({
+    status: 'success',
+    data: { total, byStatus, activationRate, recentAlumni },
+  })
+})
 
 // DELETE /alumni/:id
 fastify.delete('/alumni/:id', { preHandler: requireAdmin }, async (request, reply) => {
