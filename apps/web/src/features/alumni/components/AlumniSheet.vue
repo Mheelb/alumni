@@ -16,7 +16,8 @@ import {
   Label,
 } from '@/components/ui'
 import { cn } from '@/lib/utils'
-import { Loader2 } from 'lucide-vue-next'
+import { Loader2, Linkedin, Download } from 'lucide-vue-next'
+import axios from 'axios'
 
 const props = defineProps<{
   open: boolean
@@ -46,12 +47,51 @@ const emptyForm = (): Partial<AlumniProfileType> => ({
 
 const form = ref<Partial<AlumniProfileType>>(emptyForm())
 const errors = ref<Record<string, string>>({})
+const importUrl = ref('')
+const isImporting = ref(false)
+
+async function importFromLinkedIn() {
+  if (!importUrl.value) return
+  
+  isImporting.value = true
+  errors.value = {}
+  
+  try {
+    const { data } = await axios.post('http://localhost:3000/scraper/extract', {
+      url: importUrl.value
+    }, {
+      withCredentials: true
+    })
+    
+    const scraped = data.data
+    
+    // Auto-fill fields
+    if (scraped.firstName) form.value.firstName = scraped.firstName
+    if (scraped.lastName) form.value.lastName = scraped.lastName
+    if (scraped.company) form.value.company = scraped.company
+    if (scraped.jobTitle) form.value.jobTitle = scraped.jobTitle
+    if (scraped.city) form.value.city = scraped.city
+    
+    // Set LinkedIn URL
+    form.value.linkedinUrl = importUrl.value
+    
+    // Clear import field
+    importUrl.value = ''
+    
+  } catch (err: any) {
+    console.error(err)
+    errors.value._global = 'Erreur lors de l\'import LinkedIn. Vérifiez l\'URL.'
+  } finally {
+    isImporting.value = false
+  }
+}
 
 watch(
   () => props.open,
   (isOpen) => {
     if (!isOpen) return
     errors.value = {}
+    importUrl.value = ''
     if (props.mode === 'edit' && props.alumni) {
       form.value = {
         firstName: props.alumni.firstName,
@@ -170,6 +210,35 @@ async function handleSubmit() {
         <p v-if="errors._global" class="text-sm font-medium text-destructive bg-destructive/10 px-3 py-2 rounded-md">
           {{ errors._global }}
         </p>
+
+        <!-- Import Section -->
+        <div v-if="mode === 'create'" class="p-4 bg-muted/30 rounded-lg border">
+          <Label class="text-sm font-medium mb-2 block">Importer depuis LinkedIn</Label>
+          <div class="flex gap-2">
+            <div class="relative flex-1">
+              <Linkedin class="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
+              <Input 
+                v-model="importUrl" 
+                placeholder="https://linkedin.com/in/username" 
+                class="pl-9 bg-background"
+                @keydown.enter.prevent="importFromLinkedIn"
+              />
+            </div>
+            <Button 
+              type="button" 
+              variant="secondary" 
+              @click="importFromLinkedIn"
+              :disabled="isImporting || !importUrl"
+            >
+              <Loader2 v-if="isImporting" class="mr-2 h-4 w-4 animate-spin" />
+              <Download v-else class="mr-2 h-4 w-4" />
+              Importer
+            </Button>
+          </div>
+          <p class="text-xs text-muted-foreground mt-2">
+            Renseignez l'URL d'un profil public pour pré-remplir le formulaire.
+          </p>
+        </div>
 
         <!-- Section Identité -->
         <div class="space-y-4">

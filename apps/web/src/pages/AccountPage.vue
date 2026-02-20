@@ -35,6 +35,7 @@ import {
   ChevronLeft,
   CheckCircle2,
   Eye,
+  EyeOff,
 } from 'lucide-vue-next'
 
 const router = useRouter()
@@ -52,6 +53,9 @@ const confirmPassword = ref('')
 const isChangingPassword = ref(false)
 const passwordError = ref('')
 const passwordSuccess = ref(false)
+const showCurrentPassword = ref(false)
+const showNewPassword = ref(false)
+const showConfirmPassword = ref(false)
 
 async function handleChangePassword() {
   if (newPassword.value !== confirmPassword.value) {
@@ -297,15 +301,33 @@ function formatDate(d: string | Date | undefined) {
       <form v-else @submit.prevent="handleChangePassword" class="space-y-4 py-4">
         <div class="space-y-2">
           <Label for="currentPassword">Mot de passe actuel</Label>
-          <Input id="currentPassword" v-model="currentPassword" type="password" required />
+          <div class="relative">
+            <Input id="currentPassword" v-model="currentPassword" :type="showCurrentPassword ? 'text' : 'password'" required class="pr-9" />
+            <button type="button" class="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground" @click="showCurrentPassword = !showCurrentPassword">
+              <EyeOff v-if="showCurrentPassword" class="h-4 w-4" />
+              <Eye v-else class="h-4 w-4" />
+            </button>
+          </div>
         </div>
         <div class="space-y-2">
           <Label for="newPassword">Nouveau mot de passe</Label>
-          <Input id="newPassword" v-model="newPassword" type="password" required />
+          <div class="relative">
+            <Input id="newPassword" v-model="newPassword" :type="showNewPassword ? 'text' : 'password'" required class="pr-9" />
+            <button type="button" class="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground" @click="showNewPassword = !showNewPassword">
+              <EyeOff v-if="showNewPassword" class="h-4 w-4" />
+              <Eye v-else class="h-4 w-4" />
+            </button>
+          </div>
         </div>
         <div class="space-y-2">
           <Label for="confirmPassword">Confirmer le nouveau mot de passe</Label>
-          <Input id="confirmPassword" v-model="confirmPassword" type="password" required />
+          <div class="relative">
+            <Input id="confirmPassword" v-model="confirmPassword" :type="showConfirmPassword ? 'text' : 'password'" required class="pr-9" />
+            <button type="button" class="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground" @click="showConfirmPassword = !showConfirmPassword">
+              <EyeOff v-if="showConfirmPassword" class="h-4 w-4" />
+              <Eye v-else class="h-4 w-4" />
+            </button>
+          </div>
         </div>
         <p v-if="passwordError" class="text-sm text-destructive font-medium">{{ passwordError }}</p>
       </form>

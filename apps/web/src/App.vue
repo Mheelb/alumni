@@ -10,18 +10,17 @@ import {
   Avatar,
   AvatarFallback,
 } from '@/components/ui';
-import { 
-  GraduationCap, 
-  Github, 
-  LifeBuoy, 
-  Users, 
-  ShieldCheck, 
-  UserCircle, 
+import {
+  GraduationCap,
+  Users,
+  ShieldCheck,
+  UserCircle,
   LogOut,
   User
 } from 'lucide-vue-next';
 import { authClient } from '@/lib/auth-client';
 import { RouterView, RouterLink, useRouter } from 'vue-router';
+import logo from '@/assets/logo.svg';
 
 const router = useRouter();
 const session = authClient.useSession();
@@ -42,7 +41,7 @@ function getInitials(name: string = '') {
     <header class="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
       <div class="container flex h-16 items-center justify-between">
         <RouterLink to="/" class="flex items-center gap-2">
-          <GraduationCap class="h-6 w-6 text-primary" />
+          <img :src="logo" alt="Logo" class="h-8 w-auto" />
           <span class="text-xl font-bold tracking-tight">AlumniManager</span>
         </RouterLink>
 
@@ -62,14 +61,6 @@ function getInitials(name: string = '') {
               </Button>
             </RouterLink>
           </template>
-          <Button variant="ghost" size="sm" class="hidden sm:flex items-center gap-2">
-            <LifeBuoy class="h-4 w-4" />
-            Support
-          </Button>
-          <Button variant="ghost" size="icon" class="hidden sm:flex">
-            <Github class="h-5 w-5" />
-          </Button>
-          
           <div class="h-6 w-px bg-border hidden sm:block"></div>
           
           <template v-if="session.data?.user">
@@ -126,14 +117,13 @@ function getInitials(name: string = '') {
 
     <!-- Footer -->
     <footer class="border-t py-6 md:py-0">
-      <div class="container flex flex-col items-center justify-between gap-4 md:h-24 md:flex-row">
-        <p class="text-center text-sm leading-loose text-muted-foreground md:text-left">
-          Built by <a href="#" class="font-medium underline underline-offset-4">Alumni Team</a>. The source code is available on <a href="#" class="font-medium underline underline-offset-4">GitHub</a>.
+      <div class="container flex flex-col items-center justify-between gap-4 md:h-16 md:flex-row">
+        <p class="text-center text-sm text-muted-foreground md:text-left">
+          © {{ new Date().getFullYear() }} <span class="font-medium">My Digital School</span> — Plateforme alumni
         </p>
-        <div class="flex items-center gap-4 text-sm font-medium text-muted-foreground">
-          <a href="#" class="hover:text-foreground transition-colors">Privacy</a>
-          <a href="#" class="hover:text-foreground transition-colors">Terms</a>
-          <a href="#" class="hover:text-foreground transition-colors">Cookies</a>
+        <div class="flex items-center gap-4 text-sm text-muted-foreground">
+          <a href="#" class="hover:text-foreground transition-colors">Mentions légales</a>
+          <a href="#" class="hover:text-foreground transition-colors">Contact</a>
         </div>
       </div>
     </footer>

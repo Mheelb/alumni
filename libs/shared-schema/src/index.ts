@@ -16,7 +16,7 @@ export const AlumniSchema = z.object({
 export type AlumniType = z.infer<typeof AlumniSchema>;
 
 // Extended profile schema
-export const AlumniStatusEnum = z.enum(['invited', 'registered', 'completed']);
+export const AlumniStatusEnum = z.enum(['invited', 'registered']);
 export type AlumniStatus = z.infer<typeof AlumniStatusEnum>;
 
 export const AlumniProfileSchema = z.object({

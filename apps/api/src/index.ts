@@ -5,6 +5,8 @@ import mongoose from 'mongoose';
 import { Alumni } from './models/Alumni';
 import { auth } from './lib/auth';
 import { AlumniProfileSchema, AlumniUpdateSchema } from '@alumni/shared-schema';
+import { scraperRoutes } from './routes/scraper';
+import { requireAdmin, requireAuth } from './lib/middleware';
 
 const fastify = Fastify({ logger: true });
 const BASE_URL = process.env.BETTER_AUTH_BASE_URL || 'http://localhost:3000';
@@ -17,53 +19,7 @@ fastify.register(cors, {
   methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
 });
 
-// Helper to get session from request
-async function getSession(request: any) {
-  try {
-    const headers = new Headers();
-    for (const [key, value] of Object.entries(request.headers)) {
-      if (value) {
-        if (Array.isArray(value)) {
-          headers.set(key, value.join(', '));
-        } else {
-          headers.set(key, String(value));
-        }
-      }
-    }
-    
-    // BetterAuth expect standard Request object for its helpers sometimes
-    // But auth.api.getSession usually takes headers directly
-    const session = await auth.api.getSession({
-      headers: headers,
-    });
-    return session;
-  } catch (error) {
-    fastify.log.error('Error in getSession:');
-    fastify.log.error(error);
-    return null;
-  }
-}
-
-// Middleware: Require Logged In
-const requireAuth = async (request: any, reply: any) => {
-  const session = await getSession(request);
-  if (!session) {
-    return reply.status(401).send({ status: 'error', message: 'Non authentifié' });
-  }
-  request.session = session;
-};
-
-// Middleware: Require Admin
-const requireAdmin = async (request: any, reply: any) => {
-  const session = await getSession(request);
-  if (!session) {
-    return reply.status(401).send({ status: 'error', message: 'Non authentifié' });
-  }
-  if (session.user.role !== 'admin') {
-    return reply.status(403).send({ status: 'error', message: 'Accès refusé : Administrateur uniquement' });
-  }
-  request.session = session;
-};
+fastify.register(scraperRoutes);
 
 // BetterAuth handler
 fastify.all('/api/auth/*', async (request, reply) => {
@@ -268,6 +224,19 @@ fastify.get('/alumni', { preHandler: requireAuth }, async (request, reply) => {
   });
 });
 
+// GET /alumni/me — must be before /alumni/:id
+fastify.get('/alumni/me', { preHandler: requireAuth }, async (request: any, reply) => {
+  const email = request.session?.user?.email
+  if (!email) {
+    return reply.status(401).send({ status: 'error', message: 'Non authentifié' })
+  }
+  const alumni = await Alumni.findOne({ email, isActive: true }).lean()
+  if (!alumni) {
+    return reply.status(404).send({ status: 'error', message: 'Profil introuvable' })
+  }
+  return reply.send({ status: 'success', data: alumni })
+})
+
 // GET /alumni/:id
 fastify.get('/alumni/:id', { preHandler: requireAuth }, async (request, reply) => {
   const { id } = request.params as { id: string };
@@ -332,6 +301,35 @@ fastify.patch('/alumni/:id/deactivate', { preHandler: requireAdmin }, async (req
   }
   return reply.send({ status: 'success', data: alumni });
 });
+
+// GET /stats
+fastify.get('/stats', { preHandler: requireAdmin }, async (_request, reply) => {
+  const [total, byStatusRaw, recentAlumni] = await Promise.all([
+    Alumni.countDocuments({ isActive: true }),
+    Alumni.aggregate<{ _id: string; count: number }>([
+      { $match: { isActive: true } },
+      { $group: { _id: '$status', count: { $sum: 1 } } },
+    ]),
+    Alumni.find({ isActive: true })
+      .sort({ createdAt: -1 })
+      .limit(5)
+      .select('firstName lastName email status createdAt')
+      .lean(),
+  ])
+
+  const byStatus = { invited: 0, registered: 0 }
+  for (const row of byStatusRaw) {
+    if (row._id === 'invited') byStatus.invited = row.count
+    else if (row._id === 'registered') byStatus.registered = row.count
+  }
+
+  const activationRate = total > 0 ? Math.round((byStatus.registered / total) * 100) : 0
+
+  return reply.send({
+    status: 'success',
+    data: { total, byStatus, activationRate, recentAlumni },
+  })
+})
 
 // DELETE /alumni/:id
 fastify.delete('/alumni/:id', { preHandler: requireAdmin }, async (request, reply) => {

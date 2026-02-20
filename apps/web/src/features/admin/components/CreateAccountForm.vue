@@ -16,6 +16,7 @@ import {
   Label 
 } from '@/components/ui';
 import { Loader2, ShieldCheck, User, Mail, Lock, RefreshCw, AlertCircle, Eye, EyeOff } from 'lucide-vue-next';
+import { type AlumniType } from '@alumni/shared-schema';
 import { useUpdateAlumni, useAlumniDetail } from '@/features/alumni/composables/useAlumni';
 
 const route = useRoute();
@@ -61,7 +62,7 @@ onMounted(() => {
 
 async function handleCreateAccount() {
   if (!alumni.value || userExists.value) return;
-  
+
   error.value = '';
   isLoading.value = true;
 
@@ -72,38 +73,26 @@ async function handleCreateAccount() {
     firstName: alumni.value.firstName,
     lastName: alumni.value.lastName,
     graduationYear: alumni.value.graduationYear,
-    // @ts-ignore - alumniId is an additional field
     alumniId: alumniId,
   };
 
-  console.log('Données envoyées au signUp:', signUpData);
-  
   const { data, error: authError } = await authClient.signUp.email(signUpData);
 
   if (authError) {
-    console.error('Erreur retournée par signUp:', authError);
     error.value = authError.message || 'Une erreur est survenue lors de la création du compte';
     isLoading.value = false;
   } else {
-    console.log('Succès signUp - Données retournées:', data);
-    
-    // Mettre à jour le statut de l'alumni en "inscrit"
     try {
       await updateAlumni.mutateAsync({
         id: alumniId,
         body: { status: 'registered' }
       });
-      console.log('Statut alumni mis à jour en "registered"');
-      
       isSuccess.value = true;
       isLoading.value = false;
-      
-      // Redirection après un court délai pour laisser l'utilisateur voir le message de succès
       setTimeout(() => {
         router.push('/annuaire');
       }, 1500);
     } catch (updateErr) {
-      console.error('Erreur lors de la mise à jour du statut alumni:', updateErr);
       error.value = "Compte créé mais impossible de mettre à jour le statut du profil.";
       isLoading.value = false;
     }
@@ -210,7 +199,7 @@ async function handleCreateAccount() {
         @click="handleCreateAccount"
       >
         <Loader2 v-if="isLoading" class="mr-2 h-5 w-5 animate-spin" />
-        {{ isLoading ? 'Action en cours...' : 'Créer le compte' }}
+        {{ isLoading ? 'Création en cours...' : 'Créer le compte' }}
       </Button>
       <Button variant="ghost" class="w-full" @click="router.back()">
         Retour
