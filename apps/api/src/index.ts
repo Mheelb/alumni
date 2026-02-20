@@ -5,10 +5,12 @@ import fastifySwagger from '@fastify/swagger';
 import fastifySwaggerUi from '@fastify/swagger-ui';
 import mongoose from 'mongoose';
 import { Alumni } from './models/Alumni';
+import { User } from './models/User'; // Add this import
 import { auth } from './lib/auth';
 import { AlumniProfileSchema, AlumniUpdateSchema } from '@alumni/shared-schema';
 import { scraperRoutes } from './routes/scraper';
 import { dashboardRoutes } from './routes/dashboard';
+import { profileUpdateRequestRoutes } from './routes/profile-update-requests';
 import { requireAdmin, requireAuth } from './lib/middleware';
 
 const fastify = Fastify({ logger: true, bodyLimit: 5 * 1024 * 1024 });
@@ -169,6 +171,7 @@ fastify.register(fastifySwaggerUi, {
 
 fastify.register(scraperRoutes);
 fastify.register(dashboardRoutes);
+fastify.register(profileUpdateRequestRoutes);
 
 // ─── BetterAuth handler ───────────────────────────────────────────────────────
 

@@ -18,19 +18,28 @@ import {
   UserCircle,
   LogOut,
   User,
-  LayoutDashboard
+  LayoutDashboard,
+  FileEdit
 } from 'lucide-vue-next';
 import { authClient } from '@/lib/auth-client';
 import type { AppUser } from '@/types/user';
 import { useAlumniDetail } from '@/features/alumni/composables/useAlumni';
-import { RouterView, RouterLink, useRouter } from 'vue-router';
+import { RouterView, RouterLink, useRouter, useRoute } from 'vue-router';
+import { useProfileUpdateRequests } from '@/features/alumni/composables/useProfileUpdateRequests';
+import { computed, reactive } from 'vue';
 import logo from '@/assets/logo.svg';
 
 const router = useRouter();
+const route = useRoute();
 const session = authClient.useSession();
 const user = computed(() => session.value?.data?.user as AppUser | undefined);
 const alumniId = computed(() => user.value?.alumniId as string | undefined);
 const { data: alumni } = useAlumniDetail(alumniId);
+
+const isAdmin = computed(() => (session.data?.value?.user as any)?.role === 'admin');
+const pendingFilters = reactive({ status: 'pending' as const });
+const { data: pendingRequests } = useProfileUpdateRequests(pendingFilters, isAdmin);
+const pendingCount = computed(() => pendingRequests.value?.length ?? 0);
 
 async function handleLogout() {
   await authClient.signOut();
@@ -43,13 +52,12 @@ function getInitials(name: string = '') {
 </script>
 
 <template>
-  <div class="min-h-screen bg-background font-sans text-foreground antialiased">
+  <div class="flex flex-col min-h-screen bg-background font-sans text-foreground antialiased">
     <!-- Navbar -->
     <header class="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
       <div class="container flex h-16 items-center justify-between">
         <RouterLink to="/" class="flex items-center gap-2">
           <img :src="logo" alt="Logo" class="h-8 w-auto" />
-          <span class="text-xl font-bold tracking-tight">AlumniManager</span>
         </RouterLink>
 
         <nav class="flex items-center gap-4">
@@ -61,17 +69,39 @@ function getInitials(name: string = '') {
               </Button>
             </RouterLink>
             <RouterLink to="/annuaire">
-              <Button variant="ghost" size="sm" class="hidden sm:flex items-center gap-2">
+              <Button 
+                :variant="route.path.startsWith('/annuaire') ? 'secondary' : 'ghost'" 
+                size="sm" 
+                class="hidden sm:flex items-center gap-2 hover:text-primary transition-colors"
+              >
                 <Users class="h-4 w-4" />
                 Annuaire
               </Button>
             </RouterLink>
-            <RouterLink v-if="user?.role === 'admin'" to="/admin/users">
-              <Button variant="ghost" size="sm" class="hidden sm:flex items-center gap-2">
-                <ShieldCheck class="h-4 w-4" />
-                Comptes
-              </Button>
-            </RouterLink>
+            <!-- @ts-ignore - role exists on user -->
+            <template v-if="session.data.user.role === 'admin'">
+              <RouterLink to="/admin/demandes">
+                <Button
+                  :variant="route.path.startsWith('/admin/demandes') ? 'secondary' : 'ghost'"
+                  size="sm"
+                  class="hidden sm:flex items-center gap-2 relative hover:text-primary transition-colors"
+                >
+                  <FileEdit class="h-4 w-4" />
+                  Demandes
+                  <span v-if="pendingCount > 0" class="absolute top-1 right-1 flex h-2 w-2 rounded-full bg-amber-500" />
+                </Button>
+              </RouterLink>
+              <RouterLink to="/admin/users">
+                <Button
+                  :variant="route.path === '/admin/users' ? 'secondary' : 'ghost'"
+                  size="sm"
+                  class="hidden sm:flex items-center gap-2 hover:text-primary transition-colors"
+                >
+                  <ShieldCheck class="h-4 w-4" />
+                  Comptes
+                </Button>
+              </RouterLink>
+            </template>
           </template>
           <div class="h-6 w-px bg-border hidden sm:block"></div>
           
@@ -121,7 +151,7 @@ function getInitials(name: string = '') {
     </header>
 
     <!-- Content -->
-    <main class="relative">
+    <main class="relative flex-1">
       <!-- Background pattern -->
       <div class="absolute inset-0 -z-10 h-full w-full bg-white bg-[radial-gradient(#e5e7eb_1px,transparent_1px)] [background-size:16px_16px]"></div>
 
@@ -129,14 +159,14 @@ function getInitials(name: string = '') {
     </main>
 
     <!-- Footer -->
-    <footer class="border-t py-6 md:py-0">
+    <footer class="border-t bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 py-6 md:py-0">
       <div class="container flex flex-col items-center justify-between gap-4 md:h-16 md:flex-row">
         <p class="text-center text-sm text-muted-foreground md:text-left">
-          © {{ new Date().getFullYear() }} <span class="font-medium">My Digital School</span> — Plateforme alumni
+          © {{ new Date().getFullYear() }} <span class="font-medium text-foreground">My Digital School</span> — Plateforme alumni
         </p>
-        <div class="flex items-center gap-4 text-sm text-muted-foreground">
-          <a href="#" class="hover:text-foreground transition-colors">Mentions légales</a>
-          <a href="#" class="hover:text-foreground transition-colors">Contact</a>
+        <div class="flex items-center gap-6 text-sm font-medium text-muted-foreground">
+          <RouterLink to="/mentions-legales" class="hover:text-primary transition-colors">Mentions légales</RouterLink>
+          <RouterLink to="/contact" class="hover:text-primary transition-colors">Contact</RouterLink>
         </div>
       </div>
     </footer>
