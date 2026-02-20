@@ -8,8 +8,10 @@ import {
   DropdownMenuLabel,
   DropdownMenuSeparator,
   Avatar,
+  AvatarImage,
   AvatarFallback,
 } from '@/components/ui';
+import { computed } from 'vue';
 import {
   GraduationCap,
   Users,
@@ -20,11 +22,14 @@ import {
   LayoutDashboard
 } from 'lucide-vue-next';
 import { authClient } from '@/lib/auth-client';
+import { useAlumniDetail } from '@/features/alumni/composables/useAlumni';
 import { RouterView, RouterLink, useRouter } from 'vue-router';
 import logo from '@/assets/logo.svg';
 
 const router = useRouter();
 const session = authClient.useSession();
+const alumniId = computed(() => session.value?.data?.user?.alumniId as string | undefined);
+const { data: alumni } = useAlumniDetail(alumniId);
 
 async function handleLogout() {
   await authClient.signOut();
@@ -76,6 +81,7 @@ function getInitials(name: string = '') {
               <DropdownMenuTrigger as-child>
                 <Button variant="ghost" class="relative h-9 w-9 rounded-full p-0">
                   <Avatar class="h-9 w-9 border border-border">
+                    <AvatarImage v-if="alumni?.avatarUrl" :src="alumni.avatarUrl" :alt="session.data.user.name" />
                     <AvatarFallback class="text-xs bg-primary/5 text-primary">
                       {{ getInitials(session.data.user.name) }}
                     </AvatarFallback>

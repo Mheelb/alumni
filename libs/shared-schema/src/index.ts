@@ -30,6 +30,7 @@ export const AlumniProfileSchema = z.object({
   jobTitle: z.string().optional().nullable(),
   phone: z.string().optional().nullable(),
   linkedinUrl: z.string().url("URL LinkedIn invalide").optional().nullable().or(z.literal('')),
+  avatarUrl: z.string().optional().nullable(),
   status: AlumniStatusEnum.optional(), // Default will be handled in business logic
   isActive: z.boolean().default(true),
 });
