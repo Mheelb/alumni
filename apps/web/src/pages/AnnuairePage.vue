@@ -7,6 +7,8 @@ import {
   useAlumniList,
   useDeactivateAlumni,
   useDeleteAlumni,
+  useBulkDeactivateAlumni,
+  useBulkDeleteAlumni,
   exportAlumniCsv,
   type AlumniFilters,
   type AlumniDetail,
@@ -14,6 +16,7 @@ import {
 import AlumniSheet from '@/features/alumni/components/AlumniSheet.vue'
 import AlumniStatusBadge from '@/features/alumni/components/AlumniStatusBadge.vue'
 import AlumniDeleteDialog from '@/features/alumni/components/AlumniDeleteDialog.vue'
+import AlumniImportDialog from '@/features/alumni/components/AlumniImportDialog.vue'
 import {
   Button,
   Input,
@@ -30,10 +33,17 @@ import {
   TableCell,
   Avatar,
   AvatarFallback,
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter,
 } from '@/components/ui'
 import {
   Plus,
   Download,
+  Upload,
   Search,
   X,
   Eye,
@@ -114,10 +124,6 @@ const total = computed(() => data.value?.total ?? 0)
 const pages = computed(() => data.value?.pages ?? 1)
 const currentPage = computed(() => filters.value.page ?? 1)
 
-function setPage(p: number) {
-  filters.value = { ...filters.value, page: p }
-}
-
 function resetFilters() {
   filters.value = { search: '', graduationYear: '', diploma: '', status: '', city: '', company: '', page: 1, limit: 20 }
 }
@@ -183,10 +189,65 @@ function getInitials(a: AlumniDetail) {
   return `${a.firstName[0] ?? ''}${a.lastName[0] ?? ''}`.toUpperCase()
 }
 
+// Bulk selection
+const selectedIds = ref<Set<string>>(new Set())
+const isAllSelected = computed(() =>
+  alumni.value.length > 0 && alumni.value.every((a) => selectedIds.value.has(a._id)),
+)
+
+function toggleRow(id: string) {
+  const next = new Set(selectedIds.value)
+  if (next.has(id)) next.delete(id)
+  else next.add(id)
+  selectedIds.value = next
+}
+
+function toggleAll() {
+  if (isAllSelected.value) {
+    selectedIds.value = new Set()
+  } else {
+    selectedIds.value = new Set(alumni.value.map((a) => a._id))
+  }
+}
+
+// Reset selection on page change
+function setPage(p: number) {
+  filters.value = { ...filters.value, page: p }
+  selectedIds.value = new Set()
+}
+
+// Bulk actions
+const bulkDeactivateMutation = useBulkDeactivateAlumni()
+const bulkDeleteMutation = useBulkDeleteAlumni()
+const isBulkPending = computed(() => bulkDeactivateMutation.isPending.value || bulkDeleteMutation.isPending.value)
+
+type BulkAction = 'deactivate' | 'delete'
+const bulkDialogOpen = ref(false)
+const bulkAction = ref<BulkAction>('deactivate')
+
+function openBulkAction(action: BulkAction) {
+  bulkAction.value = action
+  bulkDialogOpen.value = true
+}
+
+async function handleBulkConfirm() {
+  const ids = Array.from(selectedIds.value)
+  if (bulkAction.value === 'deactivate') {
+    await bulkDeactivateMutation.mutateAsync(ids)
+  } else {
+    await bulkDeleteMutation.mutateAsync(ids)
+  }
+  selectedIds.value = new Set()
+  bulkDialogOpen.value = false
+}
+
 // Export
 function handleExport() {
   exportAlumniCsv(filters.value)
 }
+
+// Import
+const importDialogOpen = ref(false)
 
 // Promotion years for filter select
 const currentYear = new Date().getFullYear()
@@ -211,6 +272,10 @@ const promoYears = Array.from({ length: 30 }, (_, i) => currentYear - i)
         <Button variant="outline" size="sm" class="gap-2" @click="handleExport">
           <Download class="h-4 w-4" />
           Exporter CSV
+        </Button>
+        <Button variant="outline" size="sm" class="gap-2" @click="importDialogOpen = true">
+          <Upload class="h-4 w-4" />
+          Importer CSV
         </Button>
         <Button size="sm" class="gap-2" @click="openCreate">
           <Plus class="h-4 w-4" />
@@ -249,8 +314,9 @@ const promoYears = Array.from({ length: 30 }, (_, i) => currentYear - i)
           </SelectContent>
         </Select>
 
-        <!-- Statut -->
+        <!-- Statut (Admin only) -->
         <Select
+          v-if="isAdmin"
           :model-value="filters.status || '_all'"
           @update:model-value="(v) => { filters = { ...filters, status: v === '_all' ? '' : v, page: 1 } }"
         >
@@ -259,6 +325,7 @@ const promoYears = Array.from({ length: 30 }, (_, i) => currentYear - i)
           </SelectTrigger>
           <SelectContent>
             <SelectItem value="_all">Tous les statuts</SelectItem>
+            <SelectItem value="unlinked">Sans compte</SelectItem>
             <SelectItem value="invited">Invité</SelectItem>
             <SelectItem value="registered">Inscrit</SelectItem>
           </SelectContent>
@@ -294,6 +361,39 @@ const promoYears = Array.from({ length: 30 }, (_, i) => currentYear - i)
       </div>
     </div>
 
+    <!-- Bulk action bar -->
+    <div
+      v-if="isAdmin && selectedIds.size > 0"
+      class="flex items-center justify-between rounded-lg border border-primary/30 bg-primary/5 px-4 py-2"
+    >
+      <span class="text-sm font-medium">{{ selectedIds.size }} profil{{ selectedIds.size > 1 ? 's' : '' }} sélectionné{{ selectedIds.size > 1 ? 's' : '' }}</span>
+      <div class="flex gap-2">
+        <Button
+          variant="outline"
+          size="sm"
+          class="gap-2 text-amber-600 border-amber-300 hover:bg-amber-50"
+          :disabled="isBulkPending"
+          @click="openBulkAction('deactivate')"
+        >
+          <UserX class="h-4 w-4" />
+          Désactiver
+        </Button>
+        <Button
+          variant="outline"
+          size="sm"
+          class="gap-2 text-destructive border-destructive/30 hover:bg-destructive/10"
+          :disabled="isBulkPending"
+          @click="openBulkAction('delete')"
+        >
+          <Trash2 class="h-4 w-4" />
+          Supprimer
+        </Button>
+        <Button variant="ghost" size="sm" class="text-muted-foreground" @click="selectedIds = new Set()">
+          <X class="h-4 w-4" />
+        </Button>
+      </div>
+    </div>
+
     <!-- Table -->
     <div class="rounded-lg border bg-card shadow-sm">
       <!-- Loading -->
@@ -317,18 +417,36 @@ const promoYears = Array.from({ length: 30 }, (_, i) => currentYear - i)
       <Table v-else>
         <TableHeader>
           <TableRow>
+            <TableHead v-if="isAdmin" class="w-[40px] px-3">
+              <input
+                type="checkbox"
+                :checked="isAllSelected"
+                class="h-4 w-4 rounded border-gray-300 cursor-pointer"
+                @change="toggleAll"
+              />
+            </TableHead>
             <TableHead class="w-[48px]"></TableHead>
             <TableHead>Nom</TableHead>
             <TableHead class="hidden md:table-cell">Email</TableHead>
             <TableHead class="hidden lg:table-cell">Promotion</TableHead>
             <TableHead class="hidden lg:table-cell">Diplôme</TableHead>
             <TableHead class="hidden xl:table-cell">Entreprise</TableHead>
-            <TableHead>Statut</TableHead>
+            <TableHead v-if="isAdmin">Statut</TableHead>
             <TableHead class="text-right">Actions</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
-          <TableRow v-for="row in alumni" :key="row._id">
+          <TableRow v-for="row in alumni" :key="row._id" :class="selectedIds.has(row._id) ? 'bg-primary/5' : ''">
+            <!-- Checkbox (admin only) -->
+            <TableCell v-if="isAdmin" class="px-3">
+              <input
+                type="checkbox"
+                :checked="selectedIds.has(row._id)"
+                class="h-4 w-4 rounded border-gray-300 cursor-pointer"
+                @change="toggleRow(row._id)"
+              />
+            </TableCell>
+
             <!-- Avatar -->
             <TableCell class="py-3">
               <Avatar class="h-8 w-8">
@@ -368,8 +486,8 @@ const promoYears = Array.from({ length: 30 }, (_, i) => currentYear - i)
               <div v-if="row.jobTitle" class="text-xs text-muted-foreground">{{ row.jobTitle }}</div>
             </TableCell>
 
-            <!-- Statut -->
-            <TableCell>
+            <!-- Statut (Admin only) -->
+            <TableCell v-if="isAdmin">
               <AlumniStatusBadge :status="row.status" />
             </TableCell>
 
@@ -387,7 +505,7 @@ const promoYears = Array.from({ length: 30 }, (_, i) => currentYear - i)
                 </Button>
                 <template v-if="isAdmin">
                   <Button
-                    v-if="row.status === 'invited'"
+                    v-if="row.status === 'unlinked'"
                     variant="ghost"
                     size="icon"
                     class="h-8 w-8 text-blue-600 hover:text-blue-700 hover:bg-blue-50"
@@ -478,6 +596,40 @@ const promoYears = Array.from({ length: 30 }, (_, i) => currentYear - i)
     @update:open="sheetOpen = $event"
     @success="sheetOpen = false"
   />
+
+  <!-- Dialog import CSV -->
+  <AlumniImportDialog :open="importDialogOpen" @update:open="importDialogOpen = $event" />
+
+  <!-- Bulk action dialog -->
+  <Dialog :open="bulkDialogOpen" @update:open="bulkDialogOpen = $event">
+    <DialogContent class="sm:max-w-[425px]">
+      <DialogHeader>
+        <DialogTitle :class="bulkAction === 'delete' ? 'text-destructive' : 'text-amber-600'">
+          {{ bulkAction === 'delete' ? 'Supprimer' : 'Désactiver' }} {{ selectedIds.size }} profil{{ selectedIds.size > 1 ? 's' : '' }}
+        </DialogTitle>
+        <DialogDescription>
+          <template v-if="bulkAction === 'delete'">
+            Cette action est <strong>irréversible</strong>. Les {{ selectedIds.size }} profils sélectionnés seront définitivement supprimés ainsi que leurs comptes associés.
+          </template>
+          <template v-else>
+            Les {{ selectedIds.size }} profils sélectionnés seront désactivés et masqués de l'annuaire.
+          </template>
+        </DialogDescription>
+      </DialogHeader>
+      <DialogFooter class="mt-4">
+        <Button variant="outline" :disabled="isBulkPending" @click="bulkDialogOpen = false">Annuler</Button>
+        <Button
+          :variant="bulkAction === 'delete' ? 'destructive' : 'default'"
+          :disabled="isBulkPending"
+          @click="handleBulkConfirm"
+          class="min-w-[120px]"
+        >
+          <Loader2 v-if="isBulkPending" class="mr-2 h-4 w-4 animate-spin" />
+          {{ bulkAction === 'delete' ? 'Supprimer' : 'Désactiver' }}
+        </Button>
+      </DialogFooter>
+    </DialogContent>
+  </Dialog>
 
   <!-- Dialog confirmation -->
   <AlumniDeleteDialog

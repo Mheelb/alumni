@@ -13,7 +13,7 @@ const AlumniMongoSchema = new mongoose.Schema<AlumniProfileType>({
   phone: String,
   avatarUrl: String,
   linkedinUrl: String,
-  status: { type: String, enum: ['invited', 'registered'], default: 'invited' },
+  status: { type: String, enum: ['unlinked', 'invited', 'registered'], default: 'unlinked' },
   isActive: { type: Boolean, default: true },
 }, { timestamps: true });
 

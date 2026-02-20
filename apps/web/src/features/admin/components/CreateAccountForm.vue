@@ -85,7 +85,7 @@ async function handleCreateAccount() {
     try {
       await updateAlumni.mutateAsync({
         id: alumniId,
-        body: { status: 'registered' }
+        body: { status: 'invited' }
       });
       isSuccess.value = true;
       isLoading.value = false;

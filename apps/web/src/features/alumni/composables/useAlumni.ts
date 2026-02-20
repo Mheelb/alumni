@@ -5,7 +5,7 @@ import type { AlumniProfileType, AlumniUpdateType } from '@alumni/shared-schema'
 
 export interface StatsData {
   total: number
-  byStatus: { invited: number; registered: number }
+  byStatus: { unlinked: number; invited: number; registered: number }
   activationRate: number
   recentAlumni: Array<{
     _id: string
@@ -103,6 +103,40 @@ export function useDeleteAlumni() {
   return useMutation({
     mutationFn: (id: string) =>
       axios.delete(`${API}/alumni/${id}`, { withCredentials: true }),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['alumni'] }),
+  })
+}
+
+export interface ImportResult {
+  imported: number
+  skipped: number
+  errors: Array<{ row: number; email: string; reason: string }>
+  createdAlumni: Array<{ _id: string; email: string; firstName: string; lastName: string; graduationYear?: number }>
+}
+
+export function useBulkDeactivateAlumni() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: (ids: string[]) =>
+      axios.post(`${API}/alumni/bulk-deactivate`, { ids }, { withCredentials: true }),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['alumni'] }),
+  })
+}
+
+export function useBulkDeleteAlumni() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: (ids: string[]) =>
+      axios.post(`${API}/alumni/bulk-delete`, { ids }, { withCredentials: true }),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['alumni'] }),
+  })
+}
+
+export function useImportAlumni() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: (rows: unknown[]) =>
+      axios.post(`${API}/alumni/import`, { rows }, { withCredentials: true }).then(r => r.data.data as ImportResult),
     onSuccess: () => qc.invalidateQueries({ queryKey: ['alumni'] }),
   })
 }

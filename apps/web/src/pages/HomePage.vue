@@ -55,14 +55,16 @@ onMounted(async () => {
 
 const { data: stats, isLoading: statsLoading } = useStats(isAdmin)
 
-const statusBadgeVariant = (status: string): 'secondary' | 'outline' => {
-  if (status === 'registered') return 'secondary'
+const statusBadgeVariant = (status: string): 'default' | 'secondary' | 'outline' => {
+  if (status === 'registered') return 'default'
+  if (status === 'invited') return 'secondary'
   return 'outline'
 }
 
 const statusLabel = (status: string) => {
   if (status === 'registered') return 'Inscrit'
-  return 'Invité'
+  if (status === 'invited') return 'Invité'
+  return 'Sans compte'
 }
 </script>
 
@@ -144,7 +146,7 @@ const statusLabel = (status: string) => {
             <p class="text-3xl font-bold">
               {{ stats.activationRate }}<span class="text-lg font-medium text-muted-foreground">%</span>
             </p>
-            <p class="text-xs text-muted-foreground mt-1">alumni ayant créé leur compte</p>
+            <p class="text-xs text-muted-foreground mt-1">alumni s'etant connecté à leur compte</p>
           </CardContent>
         </Card>
 
@@ -157,11 +159,15 @@ const statusLabel = (status: string) => {
           </CardHeader>
           <CardContent class="space-y-1.5">
             <div class="flex items-center justify-between text-sm">
-              <span class="text-muted-foreground">Invités</span>
+              <span class="text-muted-foreground">Sans compte</span>
+              <span class="font-medium">{{ stats.byStatus.unlinked }}</span>
+            </div>
+            <div class="flex items-center justify-between text-sm">
+              <span class="text-muted-foreground">Invités (non connectés)</span>
               <span class="font-medium">{{ stats.byStatus.invited }}</span>
             </div>
             <div class="flex items-center justify-between text-sm">
-              <span class="text-muted-foreground">Inscrits</span>
+              <span class="text-muted-foreground">Inscrits (connectés)</span>
               <span class="font-medium">{{ stats.byStatus.registered }}</span>
             </div>
           </CardContent>

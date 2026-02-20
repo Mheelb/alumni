@@ -123,7 +123,7 @@ function validate(): boolean {
   if (props.mode === 'create') {
     const result = AlumniProfileSchema.safeParse({
       ...form.value,
-      status: 'invited',
+      status: 'unlinked',
       isActive: true,
       graduationYear: form.value.graduationYear || undefined,
       linkedinUrl: form.value.linkedinUrl || undefined,
@@ -162,7 +162,7 @@ async function handleSubmit() {
         jobTitle: form.value.jobTitle || null,
         phone: form.value.phone || null,
         linkedinUrl: form.value.linkedinUrl || null,
-        status: 'invited',
+        status: 'unlinked',
         isActive: true,
       })
     } else if (props.alumni) {
