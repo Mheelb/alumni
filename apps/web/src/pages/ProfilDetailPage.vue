@@ -2,6 +2,7 @@
 import { ref, computed, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { authClient } from '@/lib/auth-client'
+import type { AppUser } from '@/types/user'
 import { useAlumniDetail, useDeactivateAlumni, useDeleteAlumni } from '@/features/alumni/composables/useAlumni'
 import type { AlumniDetail } from '@/features/alumni/composables/useAlumni'
 import AlumniSheet from '@/features/alumni/components/AlumniSheet.vue'
@@ -42,7 +43,7 @@ const isAdmin = ref(false)
 
 onMounted(async () => {
   const { data: session } = await authClient.getSession()
-  isAdmin.value = session?.user?.role === 'admin'
+  isAdmin.value = (session?.user as AppUser | undefined)?.role === 'admin'
 })
 
 const id = computed(() => route.params.id as string)
@@ -126,7 +127,7 @@ function formatDate(d: string) {
               <div class="space-y-1">
                 <h2 class="text-xl font-bold">{{ alumni.firstName }} {{ alumni.lastName }}</h2>
                 <div class="flex items-center gap-2 flex-wrap">
-                  <AlumniStatusBadge v-if="isAdmin" :status="alumni.status" />
+                  <AlumniStatusBadge v-if="isAdmin" :status="alumni.status ?? 'unlinked'" />
                   <Badge v-if="!alumni.isActive" variant="destructive" class="text-xs">Désactivé</Badge>
                 </div>
                 <p class="text-sm text-muted-foreground flex items-center gap-1">
@@ -264,7 +265,7 @@ function formatDate(d: string) {
             </div>
             <div v-if="isAdmin">
               <p class="text-xs text-muted-foreground">Statut compte</p>
-              <AlumniStatusBadge :status="alumni.status" />
+              <AlumniStatusBadge :status="alumni.status ?? 'unlinked'" />
             </div>
             <div>
               <p class="text-xs text-muted-foreground">Actif</p>

@@ -3,6 +3,7 @@ import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useQueryClient } from '@tanstack/vue-query'
 import { authClient } from '@/lib/auth-client'
+import type { AppUser } from '@/types/user'
 import {
   useAlumniList,
   useDeactivateAlumni,
@@ -103,7 +104,7 @@ async function handleSyncAll() {
 onMounted(async () => {
   const { data: session } = await authClient.getSession()
   console.log('Session au montage:', session)
-  isAdmin.value = session?.user?.role === 'admin'
+  isAdmin.value = (session?.user as AppUser | undefined)?.role === 'admin'
 })
 
 // Filters & pagination
@@ -490,7 +491,7 @@ const promoYears = Array.from({ length: 30 }, (_, i) => currentYear - i)
 
             <!-- Statut (Admin only) -->
             <TableCell v-if="isAdmin">
-              <AlumniStatusBadge :status="row.status" />
+              <AlumniStatusBadge :status="row.status ?? 'unlinked'" />
             </TableCell>
 
             <!-- Actions inline -->

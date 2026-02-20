@@ -4,7 +4,6 @@ import { AlumniProfileSchema, type AlumniProfileType } from '@alumni/shared-sche
 import { useMutation, useQueryClient } from '@tanstack/vue-query';
 import axios from 'axios';
 import { cn } from '@/lib/utils';
-import { authClient } from '@/lib/auth-client';
 
 // Shadcn UI components
 import { Button } from '@/components/ui';
@@ -21,8 +20,16 @@ import {
 import { Loader2, User, Mail, Calendar, Linkedin, Briefcase, MapPin, Download } from 'lucide-vue-next';
 
 const queryClient = useQueryClient();
+type AlumniFormData = {
+  firstName?: string; lastName?: string; email?: string
+  graduationYear?: number; diploma?: string; city?: string
+  company?: string; jobTitle?: string; phone?: string
+  linkedinUrl?: string; avatarUrl?: string
+  status?: 'unlinked' | 'invited' | 'registered'; isActive?: boolean
+}
+
 // Use the full profile type
-const form = ref<Partial<AlumniProfileType>>({
+const form = ref<AlumniFormData>({
   firstName: '',
   lastName: '',
   email: '',

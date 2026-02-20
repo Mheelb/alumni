@@ -111,13 +111,23 @@ bun test:web      # Composants Vue
 
 ### CI — Protection de branche
 
-Chaque Pull Request vers `main` ou `dev` déclenche automatiquement 3 jobs GitHub Actions en parallèle. Le merge est bloqué si l'un d'eux échoue.
+Chaque Pull Request vers `main` ou `dev` déclenche automatiquement 5 jobs GitHub Actions en parallèle :
+
+| Job | Ce qu'il vérifie |
+|---|---|
+| `Tests — shared-schema` | Schemas Zod |
+| `Tests — API` | Typecheck TypeScript + routes Fastify |
+| `Tests — Web` | Composants Vue |
+| `Build — Web` | `vue-tsc` + compilation Vite |
+| `Audit — dépendances` | Vulnérabilités connues dans les packages |
+
+Le merge est bloqué si l'un d'eux échoue. Le cache Bun est partagé entre les jobs pour accélérer les runs.
 
 Pour activer la protection de branche sur GitHub (à répéter pour `main` et `dev`) :
 1. Aller dans **Settings → Branches → Add branch protection rule**
 2. Branch name pattern : `main` puis `dev`
 3. Cocher **Require status checks to pass before merging**
-4. Ajouter les checks : `Tests — shared-schema`, `Tests — API`, `Tests — Web`
+4. Ajouter les 5 checks listés ci-dessus
 
 ---
 

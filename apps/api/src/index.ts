@@ -135,10 +135,7 @@ fastify.patch('/admin/users/:id/toggle-status', { preHandler: requireAdmin }, as
     } else {
       await auth.api.banUser({
         headers: request.headers,
-        body: { 
-          userId: betterAuthId,
-          reason: "Désactivé par l'administrateur" 
-        }
+        body: { userId: betterAuthId }
       });
       return { status: 'success', message: 'Compte désactivé avec succès' };
     }
@@ -347,10 +344,7 @@ fastify.delete('/alumni/:id', { preHandler: requireAdmin }, async (request, repl
       const betterAuthId = user.id || user._id.toString();
       await auth.api.banUser({
         headers: request.headers,
-        body: { 
-          userId: betterAuthId,
-          reason: "Profil alumni supprimé par l'administrateur" 
-        }
+        body: { userId: betterAuthId }
       });
       fastify.log.info(`User ${betterAuthId} banned due to alumni profile deletion`);
     }
@@ -374,7 +368,8 @@ fastify.post('/alumni/bulk-deactivate', { preHandler: requireAdmin }, async (req
     return reply.status(400).send({ status: 'error', message: 'Le champ "ids" doit être un tableau non vide' })
   }
   const ids = body.ids.filter((id): id is string => typeof id === 'string')
-  const result = await Alumni.updateMany({ _id: { $in: ids } }, { isActive: false })
+  const objectIds = ids.map(id => new mongoose.Types.ObjectId(id))
+  const result = await Alumni.updateMany({ _id: { $in: objectIds } }, { isActive: false })
   return reply.send({ status: 'success', data: { updated: result.modifiedCount } })
 })
 
@@ -385,6 +380,7 @@ fastify.post('/alumni/bulk-delete', { preHandler: requireAdmin }, async (request
     return reply.status(400).send({ status: 'error', message: 'Le champ "ids" doit être un tableau non vide' })
   }
   const ids = body.ids.filter((id): id is string => typeof id === 'string')
+  const objectIds = ids.map(id => new mongoose.Types.ObjectId(id))
 
   // Ban associated auth users
   for (const id of ids) {
@@ -392,12 +388,12 @@ fastify.post('/alumni/bulk-delete', { preHandler: requireAdmin }, async (request
     if (user) {
       const betterAuthId = user.id || user._id.toString()
       try {
-        await auth.api.banUser({ headers: request.headers, body: { userId: betterAuthId, reason: "Profil alumni supprimé (bulk)" } })
+        await auth.api.banUser({ headers: request.headers, body: { userId: betterAuthId } })
       } catch { /* ignore if already banned */ }
     }
   }
 
-  const result = await Alumni.deleteMany({ _id: { $in: ids } })
+  const result = await Alumni.deleteMany({ _id: { $in: objectIds } })
   return reply.send({ status: 'success', data: { deleted: result.deletedCount } })
 })
 
@@ -439,7 +435,7 @@ fastify.post('/admin/users/bulk-ban', { preHandler: requireAdmin }, async (reque
   let banned = 0
   for (const id of ids) {
     try {
-      await auth.api.banUser({ headers: request.headers, body: { userId: id, reason: "Désactivé en masse par l'administrateur" } })
+      await auth.api.banUser({ headers: request.headers, body: { userId: id } })
       banned++
     } catch { /* skip already banned or missing users */ }
   }
@@ -455,16 +451,17 @@ fastify.post('/admin/users/bulk-delete', { preHandler: requireAdmin }, async (re
   const ids = body.ids.filter((id): id is string => typeof id === 'string')
   
   // Find users being deleted to unlink their alumni profiles
-  const users = await mongoose.connection.db?.collection('user').find({ 
-    $or: [{ id: { $in: ids } }, { _id: { $in: ids.map(id => { try { return new mongoose.Types.ObjectId(id) } catch { return id } }) } }] 
-  }).toArray()
-  
+  const validObjectIds = ids.filter(id => mongoose.Types.ObjectId.isValid(id)).map(id => new mongoose.Types.ObjectId(id))
+  const users = await mongoose.connection.db?.collection('user').find({
+    $or: [{ id: { $in: ids } }, { _id: { $in: validObjectIds } }]
+  }).toArray() ?? []
+
   const alumniIdsToUnlink = users.filter(u => u.alumniId).map(u => u.alumniId)
   if (alumniIdsToUnlink.length > 0) {
     await Alumni.updateMany({ _id: { $in: alumniIdsToUnlink } }, { status: 'unlinked' })
   }
 
-  const result = await mongoose.connection.db?.collection('user').deleteMany({ $or: [{ id: { $in: ids } }, { _id: { $in: ids.map(id => { try { return new mongoose.Types.ObjectId(id) } catch { return id } }) } }] })
+  const result = await mongoose.connection.db?.collection('user').deleteMany({ $or: [{ id: { $in: ids } }, { _id: { $in: validObjectIds } }] })
   
   // Cleanup sessions and accounts
   const finalUserIds = users.map(u => u.id || u._id.toString())
@@ -520,7 +517,7 @@ fastify.post('/alumni/import', { preHandler: requireAdmin }, async (request, rep
       email: saved.email,
       firstName: saved.firstName,
       lastName: saved.lastName,
-      graduationYear: saved.graduationYear,
+      graduationYear: saved.graduationYear ?? undefined,
     })
   }
 

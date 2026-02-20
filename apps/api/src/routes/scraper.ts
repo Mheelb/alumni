@@ -1,4 +1,4 @@
-import { FastifyInstance } from 'fastify';
+import type { FastifyInstance } from 'fastify';
 import { z } from 'zod';
 import { extractProfileData } from '../services/scraper';
 import { Alumni } from '../models/Alumni';

@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { ref, watch } from 'vue'
-import { AlumniProfileSchema, type AlumniProfileType, type AlumniUpdateType } from '@alumni/shared-schema'
+import { AlumniProfileSchema, type AlumniUpdateType } from '@alumni/shared-schema'
 import type { AlumniDetail } from '../composables/useAlumni'
 import { useCreateAlumni, useUpdateAlumni } from '../composables/useAlumni'
 import {
@@ -32,7 +32,13 @@ const emit = defineEmits<{
 
 const currentYear = new Date().getFullYear()
 
-const emptyForm = (): Partial<AlumniProfileType> => ({
+type AlumniFormData = {
+  firstName?: string; lastName?: string; email?: string
+  graduationYear?: number; diploma?: string; city?: string
+  company?: string; jobTitle?: string; phone?: string; linkedinUrl?: string
+}
+
+const emptyForm = (): AlumniFormData => ({
   firstName: '',
   lastName: '',
   email: '',
@@ -45,7 +51,7 @@ const emptyForm = (): Partial<AlumniProfileType> => ({
   linkedinUrl: '',
 })
 
-const form = ref<Partial<AlumniProfileType>>(emptyForm())
+const form = ref<AlumniFormData>(emptyForm())
 const errors = ref<Record<string, string>>({})
 const importUrl = ref('')
 const isImporting = ref(false)
@@ -97,7 +103,7 @@ watch(
         firstName: props.alumni.firstName,
         lastName: props.alumni.lastName,
         email: props.alumni.email,
-        graduationYear: props.alumni.graduationYear,
+        graduationYear: props.alumni.graduationYear ?? undefined,
         diploma: props.alumni.diploma ?? '',
         city: props.alumni.city ?? '',
         company: props.alumni.company ?? '',

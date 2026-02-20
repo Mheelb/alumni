@@ -1,7 +1,8 @@
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { authClient } from '@/lib/auth-client'
+import type { AppUser } from '@/types/user'
 import { useAlumniDetail } from '@/features/alumni/composables/useAlumni'
 import {
   Button,
@@ -33,7 +34,6 @@ import {
   Trash2,
   AlertCircle,
   Loader2,
-  ChevronLeft,
   CheckCircle2,
   Eye,
   EyeOff,
@@ -41,10 +41,11 @@ import {
 
 const router = useRouter()
 const session = authClient.useSession()
+const user = computed(() => session.value?.data?.user as AppUser | undefined)
 
 // Alumni details if applicable
-const alumniId = computed(() => session.value?.data?.user?.alumniId)
-const { data: alumni, isLoading: isLoadingAlumni } = useAlumniDetail(ref(alumniId.value || ''))
+const alumniId = computed(() => user.value?.alumniId as string | undefined)
+const { data: alumni, isLoading: isLoadingAlumni } = useAlumniDetail(alumniId)
 
 // Password change state
 const passwordDialogOpen = ref(false)
@@ -108,10 +109,6 @@ function getInitials(name: string = '') {
   return name.split(' ').map(n => n[0]).join('').toUpperCase().substring(0, 2)
 }
 
-function formatDate(d: string | Date | undefined) {
-  if (!d) return '—'
-  return new Date(d).toLocaleDateString('fr-FR', { day: '2-digit', month: 'long', year: 'numeric' })
-}
 </script>
 
 <template>
@@ -147,10 +144,10 @@ function formatDate(d: string | Date | undefined) {
                 <div class="space-y-1">
                   <h2 class="text-xl font-bold">{{ session.data.user.name }}</h2>
                   <div class="flex items-center justify-center gap-2">
-                    <Badge :variant="session.data.user.role === 'admin' ? 'default' : 'secondary'" class="capitalize font-normal px-2.5">
-                      <ShieldCheck v-if="session.data.user.role === 'admin'" class="h-3.5 w-3.5 mr-1.5" />
+                    <Badge :variant="user?.role === 'admin' ? 'default' : 'secondary'" class="capitalize font-normal px-2.5">
+                      <ShieldCheck v-if="user?.role === 'admin'" class="h-3.5 w-3.5 mr-1.5" />
                       <User v-else class="h-3.5 w-3.5 mr-1.5" />
-                      {{ session.data.user.role }}
+                      {{ user?.role }}
                     </Badge>
                   </div>
                   <p class="text-sm text-muted-foreground flex items-center justify-center gap-1.5">
@@ -178,13 +175,13 @@ function formatDate(d: string | Date | undefined) {
                 <div class="space-y-1">
                   <Label class="text-xs text-muted-foreground uppercase tracking-wider">Prénom</Label>
                   <p class="text-sm font-medium p-2 rounded-md bg-muted/30 border border-transparent">
-                    {{ session.data.user.firstName || '—' }}
+                    {{ user?.firstName || '—' }}
                   </p>
                 </div>
                 <div class="space-y-1">
                   <Label class="text-xs text-muted-foreground uppercase tracking-wider">Nom</Label>
                   <p class="text-sm font-medium p-2 rounded-md bg-muted/30 border border-transparent">
-                    {{ session.data.user.lastName || '—' }}
+                    {{ user?.lastName || '—' }}
                   </p>
                 </div>
               </div>

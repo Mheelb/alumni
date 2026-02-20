@@ -29,5 +29,6 @@
       "@alumni/shared-schema": ["../../libs/shared-schema/src/index.ts"]
     }
   },
-  "include": ["src/**/*.ts", "src/**/*.tsx", "src/**/*.vue", "../../libs/shared-schema/src/**/*.ts"]
+  "include": ["src/**/*.ts", "src/**/*.tsx", "src/**/*.vue", "../../libs/shared-schema/src/**/*.ts"],
+  "exclude": ["../../libs/shared-schema/src/__tests__/**"]
 }

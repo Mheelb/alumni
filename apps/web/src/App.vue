@@ -13,7 +13,6 @@ import {
 } from '@/components/ui';
 import { computed } from 'vue';
 import {
-  GraduationCap,
   Users,
   ShieldCheck,
   UserCircle,
@@ -22,13 +21,15 @@ import {
   LayoutDashboard
 } from 'lucide-vue-next';
 import { authClient } from '@/lib/auth-client';
+import type { AppUser } from '@/types/user';
 import { useAlumniDetail } from '@/features/alumni/composables/useAlumni';
 import { RouterView, RouterLink, useRouter } from 'vue-router';
 import logo from '@/assets/logo.svg';
 
 const router = useRouter();
 const session = authClient.useSession();
-const alumniId = computed(() => session.value?.data?.user?.alumniId as string | undefined);
+const user = computed(() => session.value?.data?.user as AppUser | undefined);
+const alumniId = computed(() => user.value?.alumniId as string | undefined);
 const { data: alumni } = useAlumniDetail(alumniId);
 
 async function handleLogout() {
@@ -53,8 +54,7 @@ function getInitials(name: string = '') {
 
         <nav class="flex items-center gap-4">
           <template v-if="session.data?.user">
-            <!-- @ts-ignore - role exists on user -->
-            <RouterLink v-if="session.data.user.role === 'admin'" to="/dashboard">
+            <RouterLink v-if="user?.role === 'admin'" to="/dashboard">
               <Button variant="ghost" size="sm" class="hidden sm:flex items-center gap-2">
                 <LayoutDashboard class="h-4 w-4" />
                 Dashboard
@@ -66,8 +66,7 @@ function getInitials(name: string = '') {
                 Annuaire
               </Button>
             </RouterLink>
-            <!-- @ts-ignore - role exists on user -->
-            <RouterLink v-if="session.data.user.role === 'admin'" to="/admin/users">
+            <RouterLink v-if="user?.role === 'admin'" to="/admin/users">
               <Button variant="ghost" size="sm" class="hidden sm:flex items-center gap-2">
                 <ShieldCheck class="h-4 w-4" />
                 Comptes
@@ -100,7 +99,7 @@ function getInitials(name: string = '') {
                   <User class="mr-2 h-4 w-4" />
                   <span>Mon compte</span>
                 </DropdownMenuItem>
-                <DropdownMenuItem v-if="session.data.user.alumniId" @click="router.push('/annuaire/' + session.data.user.alumniId)">
+                <DropdownMenuItem v-if="user?.alumniId" @click="router.push('/annuaire/' + user?.alumniId)">
                   <UserCircle class="mr-2 h-4 w-4" />
                   <span>Mon profil alumni</span>
                 </DropdownMenuItem>

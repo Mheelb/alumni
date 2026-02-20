@@ -38,21 +38,20 @@ async function handleRegister() {
   const name = `${formData.value.firstName} ${formData.value.lastName}`.trim();
 
   isLoading.value = true;
-  const { error: authError } = await authClient.signUp.email({
+  const payload = {
     email: formData.value.email,
     password: formData.value.password,
     name: name,
     firstName: formData.value.firstName,
     lastName: formData.value.lastName,
-    role: 'admin',
     callbackURL: '/',
-  });
+  };
+  const { error: authError } = await authClient.signUp.email(payload as Parameters<typeof authClient.signUp.email>[0]);
 
   if (authError) {
     error.value = authError.message || 'Une erreur est survenue lors de la création du compte';
   } else {
     isSuccess.value = true;
-    const oldPass = formData.value.password;
     formData.value = { email: '', password: '', firstName: '', lastName: '' };
     generatePassword(); // Régénérer pour le prochain
   }

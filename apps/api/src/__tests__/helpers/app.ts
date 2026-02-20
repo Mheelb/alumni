@@ -1,4 +1,5 @@
-import Fastify, { FastifyRequest, FastifyReply } from 'fastify'
+import Fastify from 'fastify'
+import type { FastifyRequest, FastifyReply } from 'fastify'
 import cors from '@fastify/cors'
 import helmet from '@fastify/helmet'
 import mongoose from 'mongoose'

@@ -16,7 +16,6 @@ import {
   Label 
 } from '@/components/ui';
 import { Loader2, ShieldCheck, User, Mail, Lock, RefreshCw, AlertCircle, Eye, EyeOff } from 'lucide-vue-next';
-import { type AlumniType } from '@alumni/shared-schema';
 import { useUpdateAlumni, useAlumniDetail } from '@/features/alumni/composables/useAlumni';
 
 const route = useRoute();
@@ -76,7 +75,7 @@ async function handleCreateAccount() {
     alumniId: alumniId,
   };
 
-  const { data, error: authError } = await authClient.signUp.email(signUpData);
+  const { error: authError } = await authClient.signUp.email(signUpData);
 
   if (authError) {
     error.value = authError.message || 'Une erreur est survenue lors de la création du compte';
