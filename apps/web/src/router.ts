@@ -6,6 +6,7 @@ import CreateAccountPage from './pages/admin/CreateAccountPage.vue'
 import UsersPage from './pages/admin/UsersPage.vue'
 import AnnuairePage from './pages/AnnuairePage.vue'
 import ProfilDetailPage from './pages/ProfilDetailPage.vue'
+import AccountPage from './pages/AccountPage.vue'
 import { authClient } from './lib/auth-client'
 
 const router = createRouter({
@@ -15,6 +16,7 @@ const router = createRouter({
     { path: '/login', component: LoginPage },
     { path: '/annuaire', component: AnnuairePage, meta: { requiresAuth: true } },
     { path: '/annuaire/:id', component: ProfilDetailPage, meta: { requiresAuth: true }},
+    { path: '/account', component: AccountPage, meta: { requiresAuth: true }},
     { 
       path: '/register', 
       component: RegisterPage,

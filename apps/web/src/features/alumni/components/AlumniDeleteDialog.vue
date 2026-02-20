@@ -31,7 +31,7 @@ const title = computed(() =>
 const description = computed(() =>
   props.mode === 'deactivate'
     ? `Le profil de ${props.alumniName} sera masqué de l'annuaire mais conservé dans la base de données. Vous pourrez le réactiver ultérieurement.`
-    : `Cette action est irréversible. Le profil de ${props.alumniName} sera définitivement supprimé de la base de données.`,
+    : `Cette action est irréversible. Le profil de ${props.alumniName} sera définitivement supprimé et son compte utilisateur associé sera révoqué.`,
 )
 
 const confirmLabel = computed(() =>

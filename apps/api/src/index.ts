@@ -294,7 +294,12 @@ fastify.post('/alumni', { preHandler: requireAdmin }, async (request, reply) => 
     return reply.status(409).send({ status: 'error', message: 'Cette adresse email est déjà utilisée' });
   }
 
-  const alumni = new Alumni(result.data);
+  const alumniData = {
+    ...result.data,
+    status: result.data.status || 'invited'
+  };
+
+  const alumni = new Alumni(alumniData);
   await alumni.save();
   return reply.status(201).send({ status: 'success', data: alumni });
 });
@@ -331,11 +336,34 @@ fastify.patch('/alumni/:id/deactivate', { preHandler: requireAdmin }, async (req
 // DELETE /alumni/:id
 fastify.delete('/alumni/:id', { preHandler: requireAdmin }, async (request, reply) => {
   const { id } = request.params as { id: string };
-  const alumni = await Alumni.findByIdAndDelete(id).lean();
-  if (!alumni) {
-    return reply.status(404).send({ status: 'error', message: 'Profil introuvable' });
+
+  try {
+    // Find the user associated with this alumni profile
+    const user = await mongoose.connection.db?.collection('user').findOne({ alumniId: id });
+    
+    if (user) {
+      // Ban the associated user account
+      const betterAuthId = user.id || user._id.toString();
+      await auth.api.banUser({
+        headers: request.headers,
+        body: { 
+          userId: betterAuthId,
+          reason: "Profil alumni supprimé par l'administrateur" 
+        }
+      });
+      fastify.log.info(`User ${betterAuthId} banned due to alumni profile deletion`);
+    }
+
+    const alumni = await Alumni.findByIdAndDelete(id).lean();
+    if (!alumni) {
+      return reply.status(404).send({ status: 'error', message: 'Profil introuvable' });
+    }
+    
+    return reply.send({ status: 'success', message: 'Profil supprimé et compte utilisateur désactivé' });
+  } catch (err) {
+    fastify.log.error(err);
+    return reply.status(500).send({ status: 'error', message: 'Erreur lors de la suppression du profil' });
   }
-  return reply.send({ status: 'success', message: 'Profil supprimé définitivement' });
 });
 
 const start = async () => {

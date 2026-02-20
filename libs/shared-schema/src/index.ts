@@ -3,12 +3,14 @@ import { z } from 'zod';
 export const UserRole = z.enum(['admin', 'alumni']);
 export type UserRoleType = z.infer<typeof UserRole>;
 
+const currentYear = new Date().getFullYear();
+
 // Legacy schema kept for backward compatibility
 export const AlumniSchema = z.object({
   firstName: z.string().min(2, "Le prénom doit contenir au moins 2 caractères"),
   lastName: z.string().min(2, "Le nom doit contenir au moins 2 caractères"),
   email: z.string().email("Adresse email invalide"),
-  graduationYear: z.number().int().min(1900).max(new Date().getFullYear() + 10).optional(),
+  graduationYear: z.number().int().min(1900).max(currentYear).optional(),
 });
 
 export type AlumniType = z.infer<typeof AlumniSchema>;
@@ -21,14 +23,14 @@ export const AlumniProfileSchema = z.object({
   firstName: z.string().min(2, "Le prénom doit contenir au moins 2 caractères"),
   lastName: z.string().min(2, "Le nom doit contenir au moins 2 caractères"),
   email: z.string().email("Adresse email invalide"),
-  graduationYear: z.number().int().min(1900).max(new Date().getFullYear() + 10).optional(),
-  diploma: z.string().optional(),
-  city: z.string().optional(),
-  company: z.string().optional(),
-  jobTitle: z.string().optional(),
-  phone: z.string().optional(),
-  linkedinUrl: z.string().url("URL LinkedIn invalide").optional().or(z.literal('')),
-  status: AlumniStatusEnum.default('invited'),
+  graduationYear: z.number().int().min(1900).max(currentYear).optional().nullable(),
+  diploma: z.string().optional().nullable(),
+  city: z.string().optional().nullable(),
+  company: z.string().optional().nullable(),
+  jobTitle: z.string().optional().nullable(),
+  phone: z.string().optional().nullable(),
+  linkedinUrl: z.string().url("URL LinkedIn invalide").optional().nullable().or(z.literal('')),
+  status: AlumniStatusEnum.optional(), // Default will be handled in business logic
   isActive: z.boolean().default(true),
 });
 
@@ -43,7 +45,7 @@ export const SignUpSchema = z.object({
   firstName: z.string().min(2, "Le prénom doit contenir au moins 2 caractères"),
   lastName: z.string().min(2, "Le nom doit contenir au moins 2 caractères"),
   role: UserRole.default('alumni'),
-  graduationYear: z.number().int().min(1900).max(new Date().getFullYear() + 10).optional(),
+  graduationYear: z.number().int().min(1900).max(currentYear).optional(),
   alumniId: z.string().optional(),
 });
 
