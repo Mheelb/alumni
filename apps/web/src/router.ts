@@ -7,12 +7,14 @@ import UsersPage from './pages/admin/UsersPage.vue'
 import AnnuairePage from './pages/AnnuairePage.vue'
 import ProfilDetailPage from './pages/ProfilDetailPage.vue'
 import AccountPage from './pages/AccountPage.vue'
+import DashboardPage from './pages/DashboardPage.vue'
 import { authClient } from './lib/auth-client'
 
 const router = createRouter({
   history: createWebHistory(),
   routes: [
     { path: '/', component: HomePage },
+    { path: '/dashboard', component: DashboardPage, meta: { requiresAdmin: true } },
     { path: '/login', component: LoginPage },
     { path: '/annuaire', component: AnnuairePage, meta: { requiresAuth: true } },
     { path: '/annuaire/:id', component: ProfilDetailPage, meta: { requiresAuth: true }},
