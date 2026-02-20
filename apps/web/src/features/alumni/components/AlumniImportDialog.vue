@@ -22,7 +22,7 @@ import axios from 'axios'
 
 const API = import.meta.env.VITE_API_URL || 'http://localhost:3000'
 
-const props = defineProps<{ open: boolean }>()
+defineProps<{ open: boolean }>()
 const emit = defineEmits<{ 'update:open': [value: boolean] }>()
 
 type Phase = 'idle' | 'previewing' | 'done'

@@ -3,6 +3,7 @@ import { ref, computed, onMounted } from 'vue'
 
 import { useRouter } from 'vue-router'
 import { authClient } from '@/lib/auth-client'
+import type { AppUser } from '@/types/user'
 import { useUsersList, useToggleUserStatus, useBulkBanUsers, useDeleteUser, useBulkDeleteUsers, type UserAccount, type UserFilters } from '@/features/admin/composables/useUsers'
 import {
   Button,
@@ -46,7 +47,7 @@ const isAdmin = ref(false)
 
 onMounted(async () => {
   const { data: session } = await authClient.getSession()
-  isAdmin.value = session?.user?.role === 'admin'
+  isAdmin.value = (session?.user as AppUser | undefined)?.role === 'admin'
 })
 
 // Filters

@@ -9,6 +9,7 @@ import ProfilDetailPage from './pages/ProfilDetailPage.vue'
 import AccountPage from './pages/AccountPage.vue'
 import DashboardPage from './pages/DashboardPage.vue'
 import { authClient } from './lib/auth-client'
+import type { AppUser } from './types/user'
 
 const router = createRouter({
   history: createWebHistory(),
@@ -37,16 +38,15 @@ const router = createRouter({
   ],
 })
 
-router.beforeEach(async (to, from, next) => {
+router.beforeEach(async (to, _from, next) => {
   if (to.meta.requiresAdmin) {
     const { data: session } = await authClient.getSession()
-    
+
     if (!session) {
       return next('/login')
     }
 
-    // @ts-ignore - role is an additional field
-    if (session.user.role !== 'admin') {
+    if ((session.user as AppUser).role !== 'admin') {
       return next('/')
     }
   }
