@@ -54,7 +54,7 @@ function getInitials(name: string = '') {
         <nav class="flex items-center gap-4">
           <template v-if="session.data?.user">
             <!-- @ts-ignore - role exists on user -->
-            <RouterLink v-if="session.data.user.role === 'admin'" to="/">
+            <RouterLink v-if="session.data.user.role === 'admin'" to="/dashboard">
               <Button variant="ghost" size="sm" class="hidden sm:flex items-center gap-2">
                 <LayoutDashboard class="h-4 w-4" />
                 Dashboard

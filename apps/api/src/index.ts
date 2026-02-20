@@ -6,6 +6,7 @@ import { Alumni } from './models/Alumni';
 import { auth } from './lib/auth';
 import { AlumniProfileSchema, AlumniUpdateSchema } from '@alumni/shared-schema';
 import { scraperRoutes } from './routes/scraper';
+import { dashboardRoutes } from './routes/dashboard';
 import { requireAdmin, requireAuth } from './lib/middleware';
 
 const fastify = Fastify({ logger: true, bodyLimit: 5 * 1024 * 1024 });
@@ -20,6 +21,7 @@ fastify.register(cors, {
 });
 
 fastify.register(scraperRoutes);
+fastify.register(dashboardRoutes);
 
 // BetterAuth handler
 fastify.all('/api/auth/*', async (request, reply) => {
