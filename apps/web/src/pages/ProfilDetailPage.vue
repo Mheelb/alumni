@@ -14,6 +14,7 @@ import {
   CardHeader,
   CardTitle,
   Avatar,
+  AvatarImage,
   AvatarFallback,
   Separator,
   Badge,
@@ -119,6 +120,7 @@ function formatDate(d: string) {
           <div class="flex flex-col sm:flex-row gap-6 items-start sm:items-center justify-between">
             <div class="flex items-center gap-4">
               <Avatar class="h-16 w-16 text-lg">
+                <AvatarImage v-if="alumni.avatarUrl" :src="alumni.avatarUrl" :alt="`${alumni.firstName} ${alumni.lastName}`" />
                 <AvatarFallback class="text-xl font-semibold">{{ getInitials(alumni) }}</AvatarFallback>
               </Avatar>
               <div class="space-y-1">

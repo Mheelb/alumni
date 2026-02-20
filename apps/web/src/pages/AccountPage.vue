@@ -10,6 +10,7 @@ import {
   CardHeader,
   CardTitle,
   Avatar,
+  AvatarImage,
   AvatarFallback,
   Separator,
   Badge,
@@ -138,6 +139,7 @@ function formatDate(d: string | Date | undefined) {
             <CardContent class="p-6">
               <div class="flex flex-col items-center text-center space-y-4">
                 <Avatar class="h-24 w-24 text-2xl border-2 border-muted">
+                  <AvatarImage v-if="alumni?.avatarUrl" :src="alumni.avatarUrl" :alt="session.data.user.name" />
                   <AvatarFallback class="text-3xl font-semibold bg-primary/5 text-primary">
                     {{ getInitials(session.data.user.name) }}
                   </AvatarFallback>

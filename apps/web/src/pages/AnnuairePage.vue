@@ -32,6 +32,7 @@ import {
   TableHead,
   TableCell,
   Avatar,
+  AvatarImage,
   AvatarFallback,
   Dialog,
   DialogContent,
@@ -450,6 +451,7 @@ const promoYears = Array.from({ length: 30 }, (_, i) => currentYear - i)
             <!-- Avatar -->
             <TableCell class="py-3">
               <Avatar class="h-8 w-8">
+                <AvatarImage v-if="row.avatarUrl" :src="row.avatarUrl" :alt="`${row.firstName} ${row.lastName}`" />
                 <AvatarFallback class="text-xs">{{ getInitials(row) }}</AvatarFallback>
               </Avatar>
             </TableCell>

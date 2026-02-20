@@ -43,6 +43,7 @@ export { default as SelectContent } from './SelectContent.vue'
 export { default as SelectItem } from './SelectItem.vue'
 // Avatar
 export { default as Avatar } from './Avatar.vue'
+export { default as AvatarImage } from './AvatarImage.vue'
 export { default as AvatarFallback } from './AvatarFallback.vue'
 // Table
 export { default as Table } from './Table.vue'
