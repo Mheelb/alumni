@@ -124,7 +124,7 @@ function formatDate(d: string) {
               <div class="space-y-1">
                 <h2 class="text-xl font-bold">{{ alumni.firstName }} {{ alumni.lastName }}</h2>
                 <div class="flex items-center gap-2 flex-wrap">
-                  <AlumniStatusBadge :status="alumni.status" />
+                  <AlumniStatusBadge v-if="isAdmin" :status="alumni.status" />
                   <Badge v-if="!alumni.isActive" variant="destructive" class="text-xs">Désactivé</Badge>
                 </div>
                 <p class="text-sm text-muted-foreground flex items-center gap-1">
@@ -134,7 +134,7 @@ function formatDate(d: string) {
               </div>
             </div>
             <div v-if="isAdmin" class="flex flex-wrap gap-2 items-center justify-start sm:justify-end mt-4 sm:mt-0">
-              <Button v-if="alumni.status === 'invited'" variant="outline" size="sm" class="gap-2 text-blue-600 border-blue-200 hover:bg-blue-50" @click="router.push('/admin/create-account/' + alumni._id)">
+              <Button v-if="alumni.status === 'unlinked'" variant="outline" size="sm" class="gap-2 text-blue-600 border-blue-200 hover:bg-blue-50" @click="router.push('/admin/create-account/' + alumni._id)">
                 <UserPlus class="h-4 w-4" />
                 Créer un compte
               </Button>
@@ -260,7 +260,7 @@ function formatDate(d: string) {
               <p class="text-xs text-muted-foreground">Modifié le</p>
               <p class="font-medium">{{ formatDate(alumni.updatedAt) }}</p>
             </div>
-            <div>
+            <div v-if="isAdmin">
               <p class="text-xs text-muted-foreground">Statut compte</p>
               <AlumniStatusBadge :status="alumni.status" />
             </div>

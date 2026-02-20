@@ -50,3 +50,30 @@ export function useToggleUserStatus() {
     onSuccess: () => qc.invalidateQueries({ queryKey: ['admin', 'users'] }),
   })
 }
+
+export function useDeleteUser() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: (userId: string) =>
+      axios.delete(`${API}/admin/users/${userId}`, { withCredentials: true }),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['admin', 'users'] }),
+  })
+}
+
+export function useBulkBanUsers() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: (ids: string[]) =>
+      axios.post(`${API}/admin/users/bulk-ban`, { ids }, { withCredentials: true }),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['admin', 'users'] }),
+  })
+}
+
+export function useBulkDeleteUsers() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: (ids: string[]) =>
+      axios.post(`${API}/admin/users/bulk-delete`, { ids }, { withCredentials: true }),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['admin', 'users'] }),
+  })
+}

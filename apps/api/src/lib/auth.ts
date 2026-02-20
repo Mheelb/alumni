@@ -28,6 +28,7 @@ export const auth = betterAuth({
       lastName: { type: "string" },
       graduationYear: { type: "number", required: false },
       alumniId: { type: "string", required: false },
+      lastLogin: { type: "date", required: false },
     },
   },
   trustedOrigins: [process.env.WEB_URL || "http://localhost:5173"],

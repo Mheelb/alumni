@@ -1,8 +1,9 @@
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
+
 import { useRouter } from 'vue-router'
 import { authClient } from '@/lib/auth-client'
-import { useUsersList, useToggleUserStatus, type UserAccount, type UserFilters } from '@/features/admin/composables/useUsers'
+import { useUsersList, useToggleUserStatus, useBulkBanUsers, useDeleteUser, useBulkDeleteUsers, type UserAccount, type UserFilters } from '@/features/admin/composables/useUsers'
 import {
   Button,
   Table,
@@ -37,6 +38,7 @@ import {
   CheckCircle2,
   XCircle,
   X,
+  Trash2,
 } from 'lucide-vue-next'
 
 const router = useRouter()
@@ -55,6 +57,58 @@ const filters = ref<UserFilters>({
 
 const { data: users, isLoading, isError } = useUsersList(filters)
 const toggleStatusMutation = useToggleUserStatus()
+const deleteUserMutation = useDeleteUser()
+const bulkBanMutation = useBulkBanUsers()
+const bulkDeleteMutation = useBulkDeleteUsers()
+
+const isBulkPending = computed(() => bulkBanMutation.isPending.value || bulkDeleteMutation.isPending.value)
+
+// Bulk selection
+const selectedIds = ref<Set<string>>(new Set())
+const isAllSelected = computed(() => {
+  const eligible = (users.value ?? []).filter((u) => u.role !== 'admin')
+  return eligible.length > 0 && eligible.every((u) => selectedIds.value.has(u.id || u._id))
+})
+
+function toggleRow(id: string) {
+  const next = new Set(selectedIds.value)
+  if (next.has(id)) next.delete(id)
+  else next.add(id)
+  selectedIds.value = next
+}
+
+function toggleAll() {
+  const eligible = (users.value ?? []).filter((u) => u.role !== 'admin')
+  if (isAllSelected.value) {
+    selectedIds.value = new Set()
+  } else {
+    selectedIds.value = new Set(eligible.map((u) => u.id || u._id))
+  }
+}
+
+const bulkDialogOpen = ref(false)
+const bulkAction = ref<'ban' | 'delete'>('ban')
+
+async function handleBulkConfirm() {
+  const ids = Array.from(selectedIds.value)
+  if (bulkAction.value === 'ban') {
+    await bulkBanMutation.mutateAsync(ids)
+  } else {
+    await bulkDeleteMutation.mutateAsync(ids)
+  }
+  selectedIds.value = new Set()
+  bulkDialogOpen.value = false
+}
+
+function openBulkBan() {
+  bulkAction.value = 'ban'
+  bulkDialogOpen.value = true
+}
+
+function openBulkDelete() {
+  bulkAction.value = 'delete'
+  bulkDialogOpen.value = true
+}
 
 function resetFilters() {
   filters.value = { role: '', status: '' }
@@ -64,6 +118,7 @@ const hasActiveFilters = computed(() => !!(filters.value.role || filters.value.s
 
 // Status toggle dialog
 const statusDialogOpen = ref(false)
+const deleteDialogOpen = ref(false)
 const targetUser = ref<UserAccount | undefined>(undefined)
 
 function openToggleStatus(user: UserAccount) {
@@ -71,11 +126,24 @@ function openToggleStatus(user: UserAccount) {
   statusDialogOpen.value = true
 }
 
+function openDeleteUser(user: UserAccount) {
+  targetUser.value = user
+  deleteDialogOpen.value = true
+}
+
 async function handleToggleStatusConfirm() {
   if (!targetUser.value) return
   const userId = targetUser.value.id || targetUser.value._id
   await toggleStatusMutation.mutateAsync(userId)
   statusDialogOpen.value = false
+  targetUser.value = undefined
+}
+
+async function handleDeleteUserConfirm() {
+  if (!targetUser.value) return
+  const userId = targetUser.value.id || targetUser.value._id
+  await deleteUserMutation.mutateAsync(userId)
+  deleteDialogOpen.value = false
   targetUser.value = undefined
 }
 
@@ -151,6 +219,39 @@ function formatDate(d: string) {
       </div>
     </div>
 
+    <!-- Bulk action bar -->
+    <div
+      v-if="selectedIds.size > 0"
+      class="flex items-center justify-between rounded-lg border border-primary/30 bg-primary/5 px-4 py-2"
+    >
+      <span class="text-sm font-medium">{{ selectedIds.size }} compte{{ selectedIds.size > 1 ? 's' : '' }} sélectionné{{ selectedIds.size > 1 ? 's' : '' }}</span>
+      <div class="flex gap-2">
+        <Button
+          variant="outline"
+          size="sm"
+          class="gap-2 text-amber-600 border-amber-300 hover:bg-amber-50"
+          :disabled="isBulkPending"
+          @click="openBulkBan"
+        >
+          <UserX class="h-4 w-4" />
+          Désactiver
+        </Button>
+        <Button
+          variant="outline"
+          size="sm"
+          class="gap-2 text-destructive border-destructive/30 hover:bg-destructive/10"
+          :disabled="isBulkPending"
+          @click="openBulkDelete"
+        >
+          <Trash2 class="h-4 w-4" />
+          Supprimer
+        </Button>
+        <Button variant="ghost" size="sm" class="text-muted-foreground" @click="selectedIds = new Set()">
+          <X class="h-4 w-4" />
+        </Button>
+      </div>
+    </div>
+
     <!-- Table -->
     <div class="rounded-lg border bg-card shadow-sm overflow-hidden">
       <!-- Loading -->
@@ -176,6 +277,14 @@ function formatDate(d: string) {
       <Table v-else>
         <TableHeader>
           <TableRow>
+            <TableHead class="w-[40px] px-3">
+              <input
+                type="checkbox"
+                :checked="isAllSelected"
+                class="h-4 w-4 rounded border-gray-300 cursor-pointer"
+                @change="toggleAll"
+              />
+            </TableHead>
             <TableHead class="w-[48px]"></TableHead>
             <TableHead>Utilisateur</TableHead>
             <TableHead class="hidden md:table-cell">Email</TableHead>
@@ -186,7 +295,18 @@ function formatDate(d: string) {
           </TableRow>
         </TableHeader>
         <TableBody>
-          <TableRow v-for="user in users" :key="user.id || user._id">
+          <TableRow v-for="user in users" :key="user.id || user._id" :class="selectedIds.has(user.id || user._id) ? 'bg-primary/5' : ''">
+            <!-- Checkbox (non-admin only) -->
+            <TableCell class="px-3">
+              <input
+                v-if="user.role !== 'admin'"
+                type="checkbox"
+                :checked="selectedIds.has(user.id || user._id)"
+                class="h-4 w-4 rounded border-gray-300 cursor-pointer"
+                @change="toggleRow(user.id || user._id)"
+              />
+            </TableCell>
+
             <!-- Avatar -->
             <TableCell class="py-3">
               <Avatar class="h-8 w-8">
@@ -264,6 +384,16 @@ function formatDate(d: string) {
                   <UserCheck v-if="user.banned" class="h-4 w-4" />
                   <UserX v-else class="h-4 w-4" />
                 </Button>
+                <Button
+                  v-if="user.role !== 'admin'"
+                  variant="ghost"
+                  size="icon"
+                  class="h-8 w-8 text-destructive hover:text-destructive hover:bg-destructive/10"
+                  title="Supprimer le compte"
+                  @click="openDeleteUser(user)"
+                >
+                  <Trash2 class="h-4 w-4" />
+                </Button>
               </div>
             </TableCell>
           </TableRow>
@@ -271,6 +401,38 @@ function formatDate(d: string) {
       </Table>
     </div>
   </div>
+
+  <!-- Bulk action dialog -->
+  <Dialog :open="bulkDialogOpen" @update:open="bulkDialogOpen = $event">
+    <DialogContent class="sm:max-w-[425px]">
+      <DialogHeader>
+        <DialogTitle :class="bulkAction === 'ban' ? 'text-amber-600' : 'text-destructive'">
+          {{ bulkAction === 'ban' ? 'Désactiver' : 'Supprimer' }} {{ selectedIds.size }} compte{{ selectedIds.size > 1 ? 's' : '' }}
+        </DialogTitle>
+        <DialogDescription>
+          <template v-if="bulkAction === 'ban'">
+            Les {{ selectedIds.size }} comptes sélectionnés seront désactivés. Les utilisateurs ne pourront plus se connecter.
+          </template>
+          <template v-else>
+            Les {{ selectedIds.size }} comptes sélectionnés seront <strong>définitivement supprimés</strong>. 
+            Les profils alumni correspondants redeviendront "Sans compte".
+          </template>
+        </DialogDescription>
+      </DialogHeader>
+      <DialogFooter class="mt-4">
+        <Button variant="outline" :disabled="isBulkPending" @click="bulkDialogOpen = false">Annuler</Button>
+        <Button
+          :variant="bulkAction === 'ban' ? 'default' : 'destructive'"
+          :disabled="isBulkPending"
+          @click="handleBulkConfirm"
+          class="min-w-[120px]"
+        >
+          <Loader2 v-if="isBulkPending" class="mr-2 h-4 w-4 animate-spin" />
+          {{ bulkAction === 'ban' ? 'Désactiver' : 'Supprimer' }}
+        </Button>
+      </DialogFooter>
+    </DialogContent>
+  </Dialog>
 
   <!-- Status Toggle Dialog -->
   <Dialog :open="statusDialogOpen" @update:open="statusDialogOpen = $event">
@@ -301,6 +463,34 @@ function formatDate(d: string) {
         >
           <Loader2 v-if="toggleStatusMutation.isPending.value" class="mr-2 h-4 w-4 animate-spin" />
           {{ targetUser?.banned ? 'Réactiver' : 'Désactiver' }}
+        </Button>
+      </DialogFooter>
+    </DialogContent>
+  </Dialog>
+
+  <!-- Delete User Dialog -->
+  <Dialog :open="deleteDialogOpen" @update:open="deleteDialogOpen = $event">
+    <DialogContent class="sm:max-w-[425px]">
+      <DialogHeader>
+        <DialogTitle class="flex items-center gap-2 text-destructive">
+          <Trash2 class="h-5 w-5" />
+          Supprimer le compte
+        </DialogTitle>
+        <DialogDescription>
+          Voulez-vous <strong>définitivement supprimer</strong> le compte de <strong>{{ targetUser?.name }}</strong> ? 
+          L'utilisateur n'aura plus d'accès, mais son profil alumni sera conservé avec le statut "Sans compte".
+        </DialogDescription>
+      </DialogHeader>
+      <DialogFooter class="mt-4">
+        <Button variant="outline" @click="deleteDialogOpen = false">Annuler</Button>
+        <Button 
+          variant="destructive"
+          :disabled="deleteUserMutation.isPending.value"
+          @click="handleDeleteUserConfirm"
+          class="min-w-[120px]"
+        >
+          <Loader2 v-if="deleteUserMutation.isPending.value" class="mr-2 h-4 w-4 animate-spin" />
+          Supprimer
         </Button>
       </DialogFooter>
     </DialogContent>

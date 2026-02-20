@@ -8,7 +8,7 @@ import { AlumniProfileSchema, AlumniUpdateSchema } from '@alumni/shared-schema';
 import { scraperRoutes } from './routes/scraper';
 import { requireAdmin, requireAuth } from './lib/middleware';
 
-const fastify = Fastify({ logger: true });
+const fastify = Fastify({ logger: true, bodyLimit: 5 * 1024 * 1024 });
 const BASE_URL = process.env.BETTER_AUTH_BASE_URL || 'http://localhost:3000';
 const MONGO_URI = process.env.MONGO_URI || 'mongodb://localhost:27017/alumni';
 
@@ -265,7 +265,7 @@ fastify.post('/alumni', { preHandler: requireAdmin }, async (request, reply) => 
 
   const alumniData = {
     ...result.data,
-    status: result.data.status || 'invited'
+    status: result.data.status || 'unlinked'
   };
 
   const alumni = new Alumni(alumniData);
@@ -317,9 +317,10 @@ fastify.get('/stats', { preHandler: requireAdmin }, async (_request, reply) => {
       .lean(),
   ])
 
-  const byStatus = { invited: 0, registered: 0 }
+  const byStatus = { unlinked: 0, invited: 0, registered: 0 }
   for (const row of byStatusRaw) {
-    if (row._id === 'invited') byStatus.invited = row.count
+    if (row._id === 'unlinked') byStatus.unlinked = row.count
+    else if (row._id === 'invited') byStatus.invited = row.count
     else if (row._id === 'registered') byStatus.registered = row.count
   }
 
@@ -363,6 +364,166 @@ fastify.delete('/alumni/:id', { preHandler: requireAdmin }, async (request, repl
     return reply.status(500).send({ status: 'error', message: 'Erreur lors de la suppression du profil' });
   }
 });
+
+// POST /alumni/bulk-deactivate
+fastify.post('/alumni/bulk-deactivate', { preHandler: requireAdmin }, async (request, reply) => {
+  const body = request.body as { ids?: unknown }
+  if (!Array.isArray(body.ids) || body.ids.length === 0) {
+    return reply.status(400).send({ status: 'error', message: 'Le champ "ids" doit être un tableau non vide' })
+  }
+  const ids = body.ids.filter((id): id is string => typeof id === 'string')
+  const result = await Alumni.updateMany({ _id: { $in: ids } }, { isActive: false })
+  return reply.send({ status: 'success', data: { updated: result.modifiedCount } })
+})
+
+// POST /alumni/bulk-delete
+fastify.post('/alumni/bulk-delete', { preHandler: requireAdmin }, async (request, reply) => {
+  const body = request.body as { ids?: unknown }
+  if (!Array.isArray(body.ids) || body.ids.length === 0) {
+    return reply.status(400).send({ status: 'error', message: 'Le champ "ids" doit être un tableau non vide' })
+  }
+  const ids = body.ids.filter((id): id is string => typeof id === 'string')
+
+  // Ban associated auth users
+  for (const id of ids) {
+    const user = await mongoose.connection.db?.collection('user').findOne({ alumniId: id })
+    if (user) {
+      const betterAuthId = user.id || user._id.toString()
+      try {
+        await auth.api.banUser({ headers: request.headers, body: { userId: betterAuthId, reason: "Profil alumni supprimé (bulk)" } })
+      } catch { /* ignore if already banned */ }
+    }
+  }
+
+  const result = await Alumni.deleteMany({ _id: { $in: ids } })
+  return reply.send({ status: 'success', data: { deleted: result.deletedCount } })
+})
+
+// DELETE /admin/users/:id
+fastify.delete('/admin/users/:id', { preHandler: requireAdmin }, async (request, reply) => {
+  const { id } = request.params as { id: string };
+  
+  const user = await mongoose.connection.db?.collection('user').findOne({ 
+    $or: [{ id: id }, { _id: new mongoose.Types.ObjectId(id) }] 
+  });
+
+  if (!user) {
+    return reply.status(404).send({ status: 'error', message: 'Utilisateur introuvable' });
+  }
+
+  // If user has an alumniId, set the alumni status back to 'unlinked'
+  if (user.alumniId) {
+    await Alumni.findByIdAndUpdate(user.alumniId, { status: 'unlinked' });
+  }
+
+  await mongoose.connection.db?.collection('user').deleteOne({ 
+    $or: [{ id: id }, { _id: new mongoose.Types.ObjectId(id) }] 
+  });
+  
+  // Also delete associated sessions and accounts (BetterAuth structure)
+  await mongoose.connection.db?.collection('session').deleteMany({ userId: user.id || user._id.toString() });
+  await mongoose.connection.db?.collection('account').deleteMany({ userId: user.id || user._id.toString() });
+
+  return reply.send({ status: 'success', message: 'Compte utilisateur supprimé avec succès' });
+});
+
+// POST /admin/users/bulk-ban
+fastify.post('/admin/users/bulk-ban', { preHandler: requireAdmin }, async (request, reply) => {
+  const body = request.body as { ids?: unknown }
+  if (!Array.isArray(body.ids) || body.ids.length === 0) {
+    return reply.status(400).send({ status: 'error', message: 'Le champ "ids" doit être un tableau non vide' })
+  }
+  const ids = body.ids.filter((id): id is string => typeof id === 'string')
+  let banned = 0
+  for (const id of ids) {
+    try {
+      await auth.api.banUser({ headers: request.headers, body: { userId: id, reason: "Désactivé en masse par l'administrateur" } })
+      banned++
+    } catch { /* skip already banned or missing users */ }
+  }
+  return reply.send({ status: 'success', data: { banned } })
+})
+
+// POST /admin/users/bulk-delete
+fastify.post('/admin/users/bulk-delete', { preHandler: requireAdmin }, async (request, reply) => {
+  const body = request.body as { ids?: unknown }
+  if (!Array.isArray(body.ids) || body.ids.length === 0) {
+    return reply.status(400).send({ status: 'error', message: 'Le champ "ids" doit être un tableau non vide' })
+  }
+  const ids = body.ids.filter((id): id is string => typeof id === 'string')
+  
+  // Find users being deleted to unlink their alumni profiles
+  const users = await mongoose.connection.db?.collection('user').find({ 
+    $or: [{ id: { $in: ids } }, { _id: { $in: ids.map(id => { try { return new mongoose.Types.ObjectId(id) } catch { return id } }) } }] 
+  }).toArray()
+  
+  const alumniIdsToUnlink = users.filter(u => u.alumniId).map(u => u.alumniId)
+  if (alumniIdsToUnlink.length > 0) {
+    await Alumni.updateMany({ _id: { $in: alumniIdsToUnlink } }, { status: 'unlinked' })
+  }
+
+  const result = await mongoose.connection.db?.collection('user').deleteMany({ $or: [{ id: { $in: ids } }, { _id: { $in: ids.map(id => { try { return new mongoose.Types.ObjectId(id) } catch { return id } }) } }] })
+  
+  // Cleanup sessions and accounts
+  const finalUserIds = users.map(u => u.id || u._id.toString())
+  await mongoose.connection.db?.collection('session').deleteMany({ userId: { $in: finalUserIds } })
+  await mongoose.connection.db?.collection('account').deleteMany({ userId: { $in: finalUserIds } })
+  
+  return reply.send({ status: 'success', data: { deleted: result?.deletedCount ?? 0 } })
+})
+
+// POST /alumni/import
+fastify.post('/alumni/import', { preHandler: requireAdmin }, async (request, reply) => {
+  const body = request.body as { rows?: unknown[] }
+
+  if (!Array.isArray(body.rows) || body.rows.length === 0) {
+    return reply.status(400).send({ status: 'error', message: 'Le champ "rows" doit être un tableau non vide' })
+  }
+
+  if (body.rows.length > 5000) {
+    return reply.status(400).send({ status: 'error', message: 'Maximum 5000 lignes par import' })
+  }
+
+  let imported = 0
+  let skipped = 0
+  const errors: Array<{ row: number; email: string; reason: string }> = []
+  const createdAlumni: Array<{ _id: string; email: string; firstName: string; lastName: string; graduationYear?: number }> = []
+
+  for (let i = 0; i < body.rows.length; i++) {
+    const rowNum = i + 2 // +2 : 1-indexed + header line
+    const raw = body.rows[i]
+    const result = AlumniProfileSchema.safeParse(raw)
+
+    if (!result.success) {
+      skipped++
+      const email = typeof (raw as Record<string, unknown>).email === 'string'
+        ? (raw as Record<string, unknown>).email as string
+        : ''
+      errors.push({ row: rowNum, email, reason: result.error.issues[0]?.message ?? 'Données invalides' })
+      continue
+    }
+
+    const existing = await Alumni.findOne({ email: result.data.email })
+    if (existing) {
+      skipped++
+      errors.push({ row: rowNum, email: result.data.email, reason: 'Email déjà existant' })
+      continue
+    }
+
+    const alumniData = { ...result.data, status: result.data.status ?? 'unlinked' }
+    const saved = await new Alumni(alumniData).save()
+    imported++
+    createdAlumni.push({
+      _id: saved._id.toString(),
+      email: saved.email,
+      firstName: saved.firstName,
+      lastName: saved.lastName,
+      graduationYear: saved.graduationYear,
+    })
+  }
+
+  return reply.send({ status: 'success', data: { imported, skipped, errors, createdAlumni } })
+})
 
 const start = async () => {
   try {
