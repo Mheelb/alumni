@@ -46,10 +46,7 @@ function getInitials(name: string = '') {
     <!-- Navbar -->
     <header class="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
       <div class="container flex h-16 items-center justify-between">
-        <RouterLink to="/" class="flex items-center gap-2">
-          <img :src="logo" alt="Logo" class="h-8 w-auto" />
-          <span class="text-xl font-bold tracking-tight">AlumniManager</span>
-        </RouterLink>
+
 
         <nav class="flex items-center gap-4">
           <template v-if="session.data?.user">
