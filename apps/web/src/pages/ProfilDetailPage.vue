@@ -6,7 +6,7 @@ import type { AppUser } from '@/types/user'
 import { useAlumniDetail, useDeactivateAlumni, useDeleteAlumni } from '@/features/alumni/composables/useAlumni'
 import type { AlumniDetail } from '@/features/alumni/composables/useAlumni'
 import AlumniSheet from '@/features/alumni/components/AlumniSheet.vue'
-import ProfileUpdateRequestDialog from '@/features/alumni/components/ProfileUpdateRequestDialog.vue'
+import ProfileUpdateRequestSheet from '@/features/alumni/components/ProfileUpdateRequestSheet.vue'
 import AlumniStatusBadge from '@/features/alumni/components/AlumniStatusBadge.vue'
 import AlumniDeleteDialog from '@/features/alumni/components/AlumniDeleteDialog.vue'
 import {
@@ -72,14 +72,14 @@ function openEdit() {
   sheetOpen.value = true
 }
 
-// Request Dialog (Alumni)
-const requestDialogOpen = ref(false)
+// Request Sheet (Alumni)
+const requestSheetOpen = ref(false)
 function openRequest() {
-  requestDialogOpen.value = true
+  requestSheetOpen.value = true
 }
 
 function handleRequestSuccess() {
-  requestDialogOpen.value = false
+  requestSheetOpen.value = false
   showMessage('success', 'Votre demande de modification a été envoyée avec succès aux administrateurs.')
 }
 
@@ -372,12 +372,12 @@ function formatDate(d: string) {
     @success="sheetOpen = false"
   />
 
-  <!-- Dialog de demande (Alumni) -->
-  <ProfileUpdateRequestDialog
+  <!-- Volet de demande (Alumni) -->
+  <ProfileUpdateRequestSheet
     v-if="alumni"
-    :open="requestDialogOpen"
+    :open="requestSheetOpen"
     :alumni="alumni"
-    @update:open="requestDialogOpen = $event"
+    @update:open="requestSheetOpen = $event"
     @success="handleRequestSuccess"
   />
 
