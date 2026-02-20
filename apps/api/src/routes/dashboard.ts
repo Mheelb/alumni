@@ -6,7 +6,74 @@ const FREELANCE_PATTERN = 'freelance|self.?employed|independant|auto.?entreprene
 const FREELANCE_OPTIONS = 'i';
 
 export async function dashboardRoutes(fastify: FastifyInstance) {
-  fastify.get('/dashboard/stats', { preHandler: requireAdmin }, async (_request, reply) => {
+  fastify.get('/dashboard/stats', {
+    preHandler: requireAdmin,
+    schema: {
+      tags: ['Statistiques'],
+      summary: 'Statistiques du tableau de bord',
+      description: 'Retourne les statistiques agrégées des alumni actifs : totaux, répartitions par statut, promotion, ville, entreprise, diplôme et évolution des inscriptions.',
+      security: [{ cookieAuth: [] }],
+      response: {
+        200: {
+          description: 'Statistiques récupérées avec succès',
+          type: 'object',
+          properties: {
+            status: { type: 'string', example: 'success' },
+            data: {
+              type: 'object',
+              properties: {
+                total: { type: 'number', description: 'Nombre total d\'alumni actifs' },
+                byStatus: {
+                  type: 'object',
+                  properties: {
+                    unlinked: { type: 'number' },
+                    invited: { type: 'number' },
+                    registered: { type: 'number' },
+                  },
+                },
+                activationRate: { type: 'number', description: 'Taux d\'activation (%)' },
+                employmentRate: { type: 'number', description: 'Taux d\'emploi (%)' },
+                freelanceRate: { type: 'number', description: 'Taux de freelance (%)' },
+                byGraduationYear: {
+                  type: 'array',
+                  items: { type: 'object', properties: { year: { type: 'number' }, count: { type: 'number' } } },
+                },
+                byCity: {
+                  type: 'array',
+                  items: { type: 'object', properties: { city: { type: 'string' }, count: { type: 'number' } } },
+                },
+                byCompany: {
+                  type: 'array',
+                  items: { type: 'object', properties: { company: { type: 'string' }, count: { type: 'number' } } },
+                },
+                byDiploma: {
+                  type: 'array',
+                  items: { type: 'object', properties: { diploma: { type: 'string' }, count: { type: 'number' } } },
+                },
+                byCreatedYear: {
+                  type: 'array',
+                  items: { type: 'object', properties: { year: { type: 'number' }, count: { type: 'number' } } },
+                },
+                recentAlumni: {
+                  type: 'array',
+                  items: {
+                    type: 'object',
+                    properties: {
+                      firstName: { type: 'string' },
+                      lastName: { type: 'string' },
+                      email: { type: 'string' },
+                      status: { type: 'string' },
+                      createdAt: { type: 'string', format: 'date-time' },
+                    },
+                  },
+                },
+              },
+            },
+          },
+        },
+      },
+    },
+  }, async (_request, reply) => {
     const baseMatch = { isActive: true };
 
     const [
