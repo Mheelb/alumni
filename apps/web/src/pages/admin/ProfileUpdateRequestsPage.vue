@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, reactive, computed } from 'vue'
+import { reactive, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { useProfileUpdateRequests } from '@/features/alumni/composables/useProfileUpdateRequests'
 import {
@@ -23,7 +23,7 @@ import {
   SelectValue,
 } from '@/components/ui'
 import { cn } from '@/lib/utils'
-import { Loader2, Eye, FileEdit, Clock, CheckCircle2, XCircle, Search, Calendar, X } from 'lucide-vue-next'
+import { Loader2, Eye, FileEdit, Clock, CheckCircle2, XCircle, Search, X } from 'lucide-vue-next'
 
 const router = useRouter()
 

@@ -10,7 +10,7 @@ import {
   Input,
   Label,
 } from '@/components/ui'
-import { Mail, MessageSquare, Send, CheckCircle2, Loader2 } from 'lucide-vue-next'
+import { Mail, Send, CheckCircle2, Loader2 } from 'lucide-vue-next'
 
 const form = ref({
   name: '',

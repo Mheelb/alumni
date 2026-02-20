@@ -11,7 +11,7 @@ import {
   AvatarImage,
   AvatarFallback,
 } from '@/components/ui';
-import { computed } from 'vue';
+import { computed, reactive } from 'vue';
 import {
   Users,
   ShieldCheck,
@@ -26,7 +26,6 @@ import type { AppUser } from '@/types/user';
 import { useAlumniDetail } from '@/features/alumni/composables/useAlumni';
 import { RouterView, RouterLink, useRouter, useRoute } from 'vue-router';
 import { useProfileUpdateRequests } from '@/features/alumni/composables/useProfileUpdateRequests';
-import { computed, reactive } from 'vue';
 import logo from '@/assets/logo.svg';
 
 const router = useRouter();
@@ -36,7 +35,7 @@ const user = computed(() => session.value?.data?.user as AppUser | undefined);
 const alumniId = computed(() => user.value?.alumniId as string | undefined);
 const { data: alumni } = useAlumniDetail(alumniId);
 
-const isAdmin = computed(() => (session.data?.value?.user as any)?.role === 'admin');
+const isAdmin = computed(() => user.value?.role === 'admin');
 const pendingFilters = reactive({ status: 'pending' as const });
 const { data: pendingRequests } = useProfileUpdateRequests(pendingFilters, isAdmin);
 const pendingCount = computed(() => pendingRequests.value?.length ?? 0);
@@ -71,6 +70,7 @@ function getInitials(name: string = '') {
             <RouterLink to="/annuaire">
               <Button 
                 :variant="route.path.startsWith('/annuaire') ? 'secondary' : 'ghost'" 
+
                 size="sm" 
                 class="hidden sm:flex items-center gap-2 hover:text-primary transition-colors"
               >
@@ -78,8 +78,7 @@ function getInitials(name: string = '') {
                 Annuaire
               </Button>
             </RouterLink>
-            <!-- @ts-ignore - role exists on user -->
-            <template v-if="session.data.user.role === 'admin'">
+            <template v-if="user?.role === 'admin'">
               <RouterLink to="/admin/demandes">
                 <Button
                   :variant="route.path.startsWith('/admin/demandes') ? 'secondary' : 'ghost'"

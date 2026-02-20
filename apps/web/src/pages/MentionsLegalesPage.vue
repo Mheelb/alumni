@@ -1,5 +1,4 @@
 <script setup lang="ts">
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui'
 import { AlertCircle } from 'lucide-vue-next'
 </script>
 

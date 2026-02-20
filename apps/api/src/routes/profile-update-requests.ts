@@ -1,4 +1,4 @@
-import { FastifyInstance, FastifyPluginOptions } from 'fastify';
+import type { FastifyInstance, FastifyPluginOptions } from 'fastify';
 import { requireAuth, requireAdmin } from '../lib/middleware';
 import { ProfileUpdateRequest } from '../models/ProfileUpdateRequest';
 import { Alumni } from '../models/Alumni';

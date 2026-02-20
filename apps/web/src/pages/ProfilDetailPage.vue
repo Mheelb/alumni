@@ -6,7 +6,7 @@ import type { AppUser } from '@/types/user'
 import { useAlumniDetail, useDeactivateAlumni, useDeleteAlumni } from '@/features/alumni/composables/useAlumni'
 import type { AlumniDetail } from '@/features/alumni/composables/useAlumni'
 import AlumniSheet from '@/features/alumni/components/AlumniSheet.vue'
-import ProfileUpdateRequestDialog from '@/features/alumni/components/ProfileUpdateRequestDialog.vue'
+import ProfileUpdateRequestSheet from '@/features/alumni/components/ProfileUpdateRequestSheet.vue'
 import AlumniStatusBadge from '@/features/alumni/components/AlumniStatusBadge.vue'
 import AlumniDeleteDialog from '@/features/alumni/components/AlumniDeleteDialog.vue'
 import {
@@ -72,14 +72,14 @@ function openEdit() {
   sheetOpen.value = true
 }
 
-// Request Dialog (Alumni)
-const requestDialogOpen = ref(false)
+// Request Sheet (Alumni)
+const requestSheetOpen = ref(false)
 function openRequest() {
-  requestDialogOpen.value = true
+  requestSheetOpen.value = true
 }
 
 function handleRequestSuccess() {
-  requestDialogOpen.value = false
+  requestSheetOpen.value = false
   showMessage('success', 'Votre demande de modification a été envoyée avec succès aux administrateurs.')
 }
 
@@ -194,51 +194,46 @@ function formatDate(d: string) {
                 </p>
               </div>
             </div>
-<<<<<<< HEAD
-            <div v-if="isAdmin" class="flex flex-wrap gap-2 items-center justify-start sm:justify-end mt-4 sm:mt-0">
-              <Button v-if="alumni.status === 'unlinked'" variant="outline" size="sm" class="gap-2 text-blue-600 border-blue-200 hover:bg-blue-50" @click="router.push('/admin/create-account/' + alumni._id)">
-                <UserPlus class="h-4 w-4" />
-                Créer un compte
-              </Button>
-              <Button variant="outline" size="sm" class="gap-2" @click="openEdit">
-                <Pencil class="h-4 w-4" />
-                Modifier
-              </Button>
-              <Button variant="outline" size="sm" class="gap-2 text-amber-600 border-amber-200 hover:bg-amber-50" @click="openDeactivate">
-                <UserX class="h-4 w-4" />
-                Désactiver
-              </Button>
-              <Button variant="destructive" size="sm" class="gap-2" @click="openDelete">
-                <Trash2 class="h-4 w-4" />
-                Supprimer
-              </Button>
-=======
             <div class="flex flex-wrap gap-2 items-center justify-start sm:justify-end mt-4 sm:mt-0">
               <template v-if="isAdmin">
-                <Button v-if="alumni.status === 'invited'" variant="outline" size="sm" class="gap-2 text-blue-600 border-blue-200 hover:bg-blue-50" @click="router.push('/admin/create-account/' + alumni._id)">
+                <Button
+                  v-if="alumni.status === 'unlinked'"
+                  variant="outline"
+                  size="sm"
+                  class="gap-2 text-blue-600 border-blue-200 hover:bg-blue-50"
+                  @click="router.push('/admin/create-account/' + alumni._id)"
+                >
                   <UserPlus class="h-4 w-4" />
                   Créer un compte
                 </Button>
+
                 <Button variant="outline" size="sm" class="gap-2" @click="openEdit">
                   <Pencil class="h-4 w-4" />
                   Modifier
                 </Button>
-                <Button variant="outline" size="sm" class="gap-2 text-amber-600 border-amber-200 hover:bg-amber-50" @click="openDeactivate">
+
+                <Button
+                  variant="outline"
+                  size="sm"
+                  class="gap-2 text-amber-600 border-amber-200 hover:bg-amber-50"
+                  @click="openDeactivate"
+                >
                   <UserX class="h-4 w-4" />
                   Désactiver
                 </Button>
+
                 <Button variant="destructive" size="sm" class="gap-2" @click="openDelete">
                   <Trash2 class="h-4 w-4" />
                   Supprimer
                 </Button>
               </template>
+
               <template v-else>
                 <Button variant="outline" size="sm" class="gap-2" @click="openRequest">
                   <FileEdit class="h-4 w-4" />
                   Demander une modification
                 </Button>
               </template>
->>>>>>> 0a50c8c (add system of modification demande)
             </div>
           </div>
         </CardContent>
@@ -372,12 +367,12 @@ function formatDate(d: string) {
     @success="sheetOpen = false"
   />
 
-  <!-- Dialog de demande (Alumni) -->
-  <ProfileUpdateRequestDialog
+  <!-- Volet de demande (Alumni) -->
+  <ProfileUpdateRequestSheet
     v-if="alumni"
-    :open="requestDialogOpen"
+    :open="requestSheetOpen"
     :alumni="alumni"
-    @update:open="requestDialogOpen = $event"
+    @update:open="requestSheetOpen = $event"
     @success="handleRequestSuccess"
   />
 

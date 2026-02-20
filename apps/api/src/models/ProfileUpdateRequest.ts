@@ -21,4 +21,4 @@ const ProfileUpdateRequestMongoSchema = new mongoose.Schema<IProfileUpdateReques
   },
 }, { timestamps: true });
 
-export const ProfileUpdateRequest = mongoose.models.ProfileUpdateRequest || mongoose.model<IProfileUpdateRequest>('ProfileUpdateRequest', ProfileUpdateRequestMongoSchema);
+export const ProfileUpdateRequest = (mongoose.models.ProfileUpdateRequest as mongoose.Model<IProfileUpdateRequest>) || mongoose.model<IProfileUpdateRequest>('ProfileUpdateRequest', ProfileUpdateRequestMongoSchema);

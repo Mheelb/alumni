@@ -133,7 +133,7 @@ function formatValue(val: any) {
                   </p>
                 </div>
                 <div v-else class="text-right">
-                  <Badge variant="ghost" class="text-[10px] text-muted-foreground">Inchangé</Badge>
+                  <Badge variant="outline" class="text-[10px] text-muted-foreground">Inchangé</Badge>
                 </div>
               </div>
             </CardContent>

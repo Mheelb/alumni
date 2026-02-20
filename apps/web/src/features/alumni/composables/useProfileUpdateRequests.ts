@@ -4,7 +4,7 @@ import type { ProfileUpdateRequestType, AlumniUpdateType } from '@alumni/shared-
 
 const API = import.meta.env.VITE_API_URL || 'http://localhost:3000'
 
-export interface ProfileUpdateRequestDetail extends ProfileUpdateRequestType {
+export interface ProfileUpdateRequestDetail extends Omit<ProfileUpdateRequestType, 'alumniId' | 'userId'> {
   _id: string
   createdAt: string
   updatedAt: string

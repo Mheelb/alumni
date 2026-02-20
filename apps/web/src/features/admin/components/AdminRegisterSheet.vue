@@ -1,6 +1,5 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue';
-import { authClient } from '@/lib/auth-client';
 import axios from 'axios';
 import { 
   Button, 
@@ -14,10 +13,9 @@ import {
   SheetFooter,
   SheetClose
 } from '@/components/ui';
-import { cn } from '@/lib/utils'
 import { Loader2, Shield, Eye, EyeOff, RefreshCw, Lock, UserPlus, Mail } from 'lucide-vue-next';
 
-const props = defineProps<{
+defineProps<{
   open: boolean
 }>();
 
