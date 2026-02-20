@@ -358,9 +358,67 @@ fastify.patch('/admin/users/:id/toggle-status', {
       });
       return { status: 'success', message: 'Compte désactivé avec succès' };
     }
-  } catch (err) {
+  } catch (err: any) {
     fastify.log.error(err);
-    return reply.status(500).send({ status: 'error', message: 'Erreur lors du changement de statut du compte' });
+    return reply.status(500).send({ status: 'error', message: err.message || 'Erreur lors de la modification' });
+  }
+});
+
+// Admin: Create another admin
+fastify.post('/admin/users', {
+  schema: {
+    tags: ['Utilisateurs'],
+    summary: 'Créer un administrateur',
+    description: '🛡️ **Admin** — Crée manuellement un nouveau compte administrateur.',
+    body: {
+      type: 'object',
+      required: ['email', 'password', 'firstName', 'lastName'],
+      properties: {
+        email:     { type: 'string', format: 'email' },
+        password:  { type: 'string', minLength: 8 },
+        firstName: { type: 'string' },
+        lastName:  { type: 'string' },
+        name:      { type: 'string' },
+      },
+    },
+    response: {
+      200: SuccessMsg,
+      409: ErrorResp,
+      500: ErrorResp,
+    },
+  },
+  preHandler: requireAdmin,
+}, async (request, reply) => {
+  try {
+    const { email, password, firstName, lastName, name } = request.body as any;
+    
+    // Check if user already exists
+    const existing = await mongoose.connection.db?.collection('user').findOne({ email });
+    if (existing) {
+      return reply.status(409).send({ status: 'error', message: 'Cet email est déjà utilisé' });
+    }
+
+    // Use BetterAuth to create the user
+    await auth.api.signUpEmail({
+      body: {
+        email,
+        password,
+        name: name || `${firstName} ${lastName}`,
+        firstName,
+        lastName,
+      },
+    });
+
+    // Force role to admin directly in DB
+    await mongoose.connection.db?.collection('user').updateOne(
+      { email },
+      { $set: { role: 'admin' } }
+    );
+
+    return { status: 'success', message: 'Administrateur créé avec succès' };
+  } catch (err: any) {
+    fastify.log.error(err);
+    return reply.status(500).send({ status: 'error', message: err.message || 'Erreur lors de la création' });
   }
 });
 

@@ -2,9 +2,11 @@
 import { ref, computed, onMounted } from 'vue'
 
 import { useRouter } from 'vue-router'
+import { useQueryClient } from '@tanstack/vue-query'
 import { authClient } from '@/lib/auth-client'
 import type { AppUser } from '@/types/user'
 import { useUsersList, useToggleUserStatus, useBulkBanUsers, useDeleteUser, useBulkDeleteUsers, type UserAccount, type UserFilters } from '@/features/admin/composables/useUsers'
+import AdminRegisterSheet from '@/features/admin/components/AdminRegisterSheet.vue'
 import {
   Button,
   Table,
@@ -31,6 +33,7 @@ import {
 import {
   UserX,
   UserCheck,
+  UserPlus,
   Eye,
   Loader2,
   ShieldCheck,
@@ -43,6 +46,7 @@ import {
 } from 'lucide-vue-next'
 
 const router = useRouter()
+const qc = useQueryClient()
 const isAdmin = ref(false)
 
 onMounted(async () => {
@@ -117,6 +121,17 @@ function resetFilters() {
 
 const hasActiveFilters = computed(() => !!(filters.value.role || filters.value.status))
 
+// Register Sheet
+const registerSheetOpen = ref(false)
+
+function openRegister() {
+  registerSheetOpen.value = true
+}
+
+function handleRegisterSuccess() {
+  qc.invalidateQueries({ queryKey: ['users'] })
+}
+
 // Status toggle dialog
 const statusDialogOpen = ref(false)
 const deleteDialogOpen = ref(false)
@@ -170,6 +185,12 @@ function formatDate(d: string) {
         <p class="text-muted-foreground text-sm mt-1">
           {{ isLoading ? 'Chargement…' : `${users?.length ?? 0} compte${(users?.length ?? 0) > 1 ? 's' : ''} utilisateur` }}
         </p>
+      </div>
+      <div v-if="isAdmin">
+        <Button @click="openRegister" class="gap-2">
+          <UserPlus class="h-4 w-4" />
+          Nouvel administrateur
+        </Button>
       </div>
     </div>
 
@@ -434,6 +455,13 @@ function formatDate(d: string) {
       </DialogFooter>
     </DialogContent>
   </Dialog>
+
+  <!-- Register Sheet -->
+  <AdminRegisterSheet
+    :open="registerSheetOpen"
+    @update:open="registerSheetOpen = $event"
+    @success="handleRegisterSuccess"
+  />
 
   <!-- Status Toggle Dialog -->
   <Dialog :open="statusDialogOpen" @update:open="statusDialogOpen = $event">
