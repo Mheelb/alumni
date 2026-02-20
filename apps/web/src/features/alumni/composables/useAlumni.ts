@@ -46,7 +46,7 @@ export function useAlumniList(filters: Ref<AlumniFilters>) {
 
 export type AlumniDetail = AlumniProfileType & { _id: string; createdAt: string; updatedAt: string }
 
-export function useAlumniDetail(id: Ref<string>) {
+export function useAlumniDetail(id: Ref<string | undefined>) {
   return useQuery({
     queryKey: ['alumni', id],
     queryFn: async (): Promise<AlumniDetail> => {

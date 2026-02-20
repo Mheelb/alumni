@@ -13,15 +13,21 @@ export const auth = betterAuth({
     enabled: true,
     autoSignIn: false,
     requireEmailVerification: false,
+    signUp: {
+      enabled: true,
+    },
   },
   plugins: [
-    admin(),
+    admin({
+      defaultRole: "alumni",
+    }),
   ],
   user: {
     additionalFields: {
       firstName: { type: "string" },
       lastName: { type: "string" },
       graduationYear: { type: "number", required: false },
+      alumniId: { type: "string", required: false },
     },
   },
   trustedOrigins: [process.env.WEB_URL || "http://localhost:5173"],

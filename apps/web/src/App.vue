@@ -1,6 +1,25 @@
 <script setup lang="ts">
-import { Button } from '@/components/ui';
-import { GraduationCap, Github, LifeBuoy, Users } from 'lucide-vue-next';
+import {
+  Button,
+  DropdownMenu,
+  DropdownMenuTrigger,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  Avatar,
+  AvatarFallback,
+} from '@/components/ui';
+import { 
+  GraduationCap, 
+  Github, 
+  LifeBuoy, 
+  Users, 
+  ShieldCheck, 
+  UserCircle, 
+  LogOut,
+  User
+} from 'lucide-vue-next';
 import { authClient } from '@/lib/auth-client';
 import { RouterView, RouterLink, useRouter } from 'vue-router';
 
@@ -10,6 +29,10 @@ const session = authClient.useSession();
 async function handleLogout() {
   await authClient.signOut();
   router.push('/login');
+}
+
+function getInitials(name: string = '') {
+  return name.split(' ').map(n => n[0]).join('').toUpperCase().substring(0, 2);
 }
 </script>
 
@@ -31,6 +54,13 @@ async function handleLogout() {
                 Annuaire
               </Button>
             </RouterLink>
+            <!-- @ts-ignore - role exists on user -->
+            <RouterLink v-if="session.data.user.role === 'admin'" to="/admin/users">
+              <Button variant="ghost" size="sm" class="hidden sm:flex items-center gap-2">
+                <ShieldCheck class="h-4 w-4" />
+                Comptes
+              </Button>
+            </RouterLink>
           </template>
           <Button variant="ghost" size="sm" class="hidden sm:flex items-center gap-2">
             <LifeBuoy class="h-4 w-4" />
@@ -39,9 +69,43 @@ async function handleLogout() {
           <Button variant="ghost" size="icon" class="hidden sm:flex">
             <Github class="h-5 w-5" />
           </Button>
+          
           <div class="h-6 w-px bg-border hidden sm:block"></div>
+          
           <template v-if="session.data?.user">
-            <Button variant="outline" size="sm" @click="handleLogout">Déconnexion</Button>
+            <DropdownMenu>
+              <DropdownMenuTrigger as-child>
+                <Button variant="ghost" class="relative h-9 w-9 rounded-full p-0">
+                  <Avatar class="h-9 w-9 border border-border">
+                    <AvatarFallback class="text-xs bg-primary/5 text-primary">
+                      {{ getInitials(session.data.user.name) }}
+                    </AvatarFallback>
+                  </Avatar>
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent class="w-56" align="end">
+                <DropdownMenuLabel class="font-normal">
+                  <div class="flex flex-col space-y-1">
+                    <p class="text-sm font-medium leading-none">{{ session.data.user.name }}</p>
+                    <p class="text-xs leading-none text-muted-foreground">{{ session.data.user.email }}</p>
+                  </div>
+                </DropdownMenuLabel>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem @click="router.push('/account')">
+                  <User class="mr-2 h-4 w-4" />
+                  <span>Mon compte</span>
+                </DropdownMenuItem>
+                <DropdownMenuItem v-if="session.data.user.alumniId" @click="router.push('/annuaire/' + session.data.user.alumniId)">
+                  <UserCircle class="mr-2 h-4 w-4" />
+                  <span>Mon profil alumni</span>
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem @click="handleLogout" class="text-destructive focus:text-destructive">
+                  <LogOut class="mr-2 h-4 w-4" />
+                  <span>Déconnexion</span>
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
           </template>
           <template v-else>
             <RouterLink to="/login">
