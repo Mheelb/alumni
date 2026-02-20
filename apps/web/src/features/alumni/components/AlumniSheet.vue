@@ -16,7 +16,7 @@ import {
   Label,
 } from '@/components/ui'
 import { cn } from '@/lib/utils'
-import { Loader2, Linkedin, Download } from 'lucide-vue-next'
+import { Loader2, Linkedin, Download, User, GraduationCap, MapPin, Briefcase } from 'lucide-vue-next'
 import axios from 'axios'
 
 const props = defineProps<{
@@ -199,170 +199,190 @@ async function handleSubmit() {
 
 <template>
   <Sheet :open="open" @update:open="emit('update:open', $event)">
-    <SheetContent side="right" class="w-full sm:max-w-2xl overflow-y-auto">
-      <SheetHeader class="mb-6">
-        <SheetTitle>
-          {{ mode === 'create' ? 'Nouveau profil' : 'Modifier le profil' }}
-        </SheetTitle>
-        <SheetDescription>
-          {{ mode === 'create'
-            ? 'Créez manuellement un nouveau profil alumni.'
-            : 'Modifiez les informations du profil.' }}
-        </SheetDescription>
-      </SheetHeader>
+    <SheetContent side="right" class="w-full sm:max-w-2xl p-0 flex flex-col h-full">
+      <div class="flex-1 overflow-y-auto p-6">
+        <SheetHeader class="mb-6">
+          <SheetTitle>
+            {{ mode === 'create' ? 'Nouveau profil alumni' : 'Modifier le profil' }}
+          </SheetTitle>
+          <SheetDescription>
+            {{ mode === 'create'
+              ? 'Créez manuellement un nouveau profil alumni ou importez-le depuis LinkedIn.'
+              : 'Modifiez les informations du profil ci-dessous.' }}
+          </SheetDescription>
+        </SheetHeader>
 
-      <form class="space-y-6" @submit.prevent="handleSubmit">
-        <!-- Erreur globale -->
-        <p v-if="errors._global" class="text-sm font-medium text-destructive bg-destructive/10 px-3 py-2 rounded-md">
-          {{ errors._global }}
-        </p>
-
-        <!-- Import Section -->
-        <div v-if="mode === 'create'" class="p-4 bg-muted/30 rounded-lg border">
-          <Label class="text-sm font-medium mb-2 block">Importer depuis LinkedIn</Label>
-          <div class="flex gap-2">
-            <div class="relative flex-1">
-              <Linkedin class="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
-              <Input 
-                v-model="importUrl" 
-                placeholder="https://linkedin.com/in/username" 
-                class="pl-9 bg-background"
-                @keydown.enter.prevent="importFromLinkedIn"
-              />
-            </div>
-            <Button 
-              type="button" 
-              variant="secondary" 
-              @click="importFromLinkedIn"
-              :disabled="isImporting || !importUrl"
-            >
-              <Loader2 v-if="isImporting" class="mr-2 h-4 w-4 animate-spin" />
-              <Download v-else class="mr-2 h-4 w-4" />
-              Importer
-            </Button>
-          </div>
-          <p class="text-xs text-muted-foreground mt-2">
-            Renseignez l'URL d'un profil public pour pré-remplir le formulaire.
+        <form id="alumni-form" class="space-y-8" @submit.prevent="handleSubmit">
+          <!-- Erreur globale -->
+          <p v-if="errors._global" class="text-sm font-medium text-destructive bg-destructive/10 px-3 py-2 rounded-md border border-destructive/20">
+            {{ errors._global }}
           </p>
-        </div>
 
-        <!-- Section Identité -->
-        <div class="space-y-4">
-          <h3 class="text-sm font-semibold text-muted-foreground uppercase tracking-wide">Identité</h3>
-          <div class="grid grid-cols-2 gap-4">
+          <!-- Import Section -->
+          <div v-if="mode === 'create'" class="p-4 bg-muted/30 rounded-lg border border-border space-y-3">
+            <Label class="text-sm font-semibold flex items-center gap-2">
+              <Linkedin class="h-4 w-4 text-blue-600" />
+              Importation LinkedIn
+            </Label>
+            <div class="flex gap-2">
+              <div class="relative flex-1">
+                <Linkedin class="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
+                <Input 
+                  v-model="importUrl" 
+                  placeholder="https://linkedin.com/in/username" 
+                  class="pl-9 bg-background"
+                  @keydown.enter.prevent="importFromLinkedIn"
+                />
+              </div>
+              <Button 
+                type="button" 
+                variant="secondary" 
+                @click="importFromLinkedIn"
+                :disabled="isImporting || !importUrl"
+              >
+                <Loader2 v-if="isImporting" class="mr-2 h-4 w-4 animate-spin" />
+                <Download v-else class="mr-2 h-4 w-4" />
+                Importer
+              </Button>
+            </div>
+            <p class="text-xs text-muted-foreground">
+              Renseignez l'URL d'un profil public pour pré-remplir automatiquement les champs ci-dessous.
+            </p>
+          </div>
+
+          <!-- Section Identité -->
+          <div class="space-y-4">
+            <h3 class="text-sm font-semibold text-muted-foreground uppercase tracking-wide flex items-center gap-2">
+              <User class="h-4 w-4" />
+              Identité
+            </h3>
+            <div class="grid grid-cols-2 gap-4">
+              <div class="space-y-2">
+                <Label for="firstName" :class="cn(errors.firstName && 'text-destructive')">Prénom</Label>
+                <Input
+                  id="firstName"
+                  v-model="form.firstName"
+                  placeholder="Alice"
+                  :class="cn(errors.firstName && 'border-destructive')"
+                />
+                <p v-if="errors.firstName" class="text-xs text-destructive">{{ errors.firstName }}</p>
+              </div>
+              <div class="space-y-2">
+                <Label for="lastName" :class="cn(errors.lastName && 'text-destructive')">Nom</Label>
+                <Input
+                  id="lastName"
+                  v-model="form.lastName"
+                  placeholder="Dupont"
+                  :class="cn(errors.lastName && 'border-destructive')"
+                />
+                <p v-if="errors.lastName" class="text-xs text-destructive">{{ errors.lastName }}</p>
+              </div>
+            </div>
+
             <div class="space-y-2">
-              <Label for="firstName" :class="cn(errors.firstName && 'text-destructive')">Prénom</Label>
+              <Label for="email" :class="cn(errors.email && 'text-destructive')">Email</Label>
               <Input
-                id="firstName"
-                v-model="form.firstName"
-                placeholder="Alice"
-                :class="cn(errors.firstName && 'border-destructive')"
+                id="email"
+                type="email"
+                v-model="form.email"
+                placeholder="alice.dupont@exemple.com"
+                :disabled="mode === 'edit'"
+                :class="cn(errors.email && 'border-destructive', mode === 'edit' && 'opacity-60 cursor-not-allowed')"
               />
-              <p v-if="errors.firstName" class="text-xs text-destructive">{{ errors.firstName }}</p>
-            </div>
-            <div class="space-y-2">
-              <Label for="lastName" :class="cn(errors.lastName && 'text-destructive')">Nom</Label>
-              <Input
-                id="lastName"
-                v-model="form.lastName"
-                placeholder="Dupont"
-                :class="cn(errors.lastName && 'border-destructive')"
-              />
-              <p v-if="errors.lastName" class="text-xs text-destructive">{{ errors.lastName }}</p>
+              <p v-if="errors.email" class="text-xs text-destructive">{{ errors.email }}</p>
             </div>
           </div>
 
-          <div class="space-y-2">
-            <Label for="email" :class="cn(errors.email && 'text-destructive')">Email</Label>
-            <Input
-              id="email"
-              type="email"
-              v-model="form.email"
-              placeholder="alice.dupont@exemple.com"
-              :disabled="mode === 'edit'"
-              :class="cn(errors.email && 'border-destructive', mode === 'edit' && 'opacity-60 cursor-not-allowed')"
-            />
-            <p v-if="errors.email" class="text-xs text-destructive">{{ errors.email }}</p>
-          </div>
-        </div>
-
-        <!-- Section Formation -->
-        <div class="space-y-4">
-          <h3 class="text-sm font-semibold text-muted-foreground uppercase tracking-wide">Formation</h3>
-          <div class="grid grid-cols-2 gap-4">
-            <div class="space-y-2">
-              <Label for="graduationYear">Promotion</Label>
-              <Input
-                id="graduationYear"
-                type="number"
-                v-model.number="form.graduationYear"
-                :placeholder="String(currentYear)"
-                min="1900"
-                :max="currentYear"
-              />
-            </div>
-            <div class="space-y-2">
-              <Label for="diploma">Diplôme</Label>
-              <Input
-                id="diploma"
-                v-model="form.diploma"
-                placeholder="Master, Bachelor, MBA…"
-              />
-            </div>
-          </div>
-        </div>
-
-        <!-- Section Localisation -->
-        <div class="space-y-4">
-          <h3 class="text-sm font-semibold text-muted-foreground uppercase tracking-wide">Localisation</h3>
-          <div class="space-y-2">
-            <Label for="city">Ville</Label>
-            <Input id="city" v-model="form.city" placeholder="Paris" />
-          </div>
-        </div>
-
-        <!-- Section Parcours pro -->
-        <div class="space-y-4">
-          <h3 class="text-sm font-semibold text-muted-foreground uppercase tracking-wide">Parcours professionnel</h3>
-          <div class="grid grid-cols-2 gap-4">
-            <div class="space-y-2">
-              <Label for="company">Entreprise</Label>
-              <Input id="company" v-model="form.company" placeholder="Société XYZ" />
-            </div>
-            <div class="space-y-2">
-              <Label for="jobTitle">Poste</Label>
-              <Input id="jobTitle" v-model="form.jobTitle" placeholder="UX Designer" />
+          <!-- Section Formation -->
+          <div class="space-y-4">
+            <h3 class="text-sm font-semibold text-muted-foreground uppercase tracking-wide flex items-center gap-2">
+              <GraduationCap class="h-4 w-4" />
+              Formation
+            </h3>
+            <div class="grid grid-cols-2 gap-4">
+              <div class="space-y-2">
+                <Label for="graduationYear">Promotion</Label>
+                <Input
+                  id="graduationYear"
+                  type="number"
+                  v-model.number="form.graduationYear"
+                  :placeholder="String(currentYear)"
+                  min="1900"
+                  :max="currentYear"
+                />
+              </div>
+              <div class="space-y-2">
+                <Label for="diploma">Diplôme</Label>
+                <Input
+                  id="diploma"
+                  v-model="form.diploma"
+                  placeholder="Master, Bachelor, MBA…"
+                />
+              </div>
             </div>
           </div>
 
-          <div class="grid grid-cols-2 gap-4">
-            <div class="space-y-2">
-              <Label for="phone">Téléphone</Label>
-              <Input id="phone" v-model="form.phone" placeholder="+33 6 00 00 00 00" />
+          <!-- Section Parcours pro -->
+          <div class="space-y-4">
+            <h3 class="text-sm font-semibold text-muted-foreground uppercase tracking-wide flex items-center gap-2">
+              <Briefcase class="h-4 w-4" />
+              Parcours professionnel
+            </h3>
+            <div class="grid grid-cols-2 gap-4">
+              <div class="space-y-2">
+                <Label for="company">Entreprise</Label>
+                <Input id="company" v-model="form.company" placeholder="Société XYZ" />
+              </div>
+              <div class="space-y-2">
+                <Label for="jobTitle">Poste</Label>
+                <Input id="jobTitle" v-model="form.jobTitle" placeholder="UX Designer" />
+              </div>
+            </div>
+          </div>
+
+          <!-- Section Localisation & Contact -->
+          <div class="space-y-4">
+            <h3 class="text-sm font-semibold text-muted-foreground uppercase tracking-wide flex items-center gap-2">
+              <MapPin class="h-4 w-4" />
+              Localisation & Contact
+            </h3>
+            <div class="grid grid-cols-2 gap-4">
+              <div class="space-y-2">
+                <Label for="city">Ville</Label>
+                <Input id="city" v-model="form.city" placeholder="Paris" />
+              </div>
+              <div class="space-y-2">
+                <Label for="phone">Téléphone</Label>
+                <Input id="phone" v-model="form.phone" placeholder="+33 6 00 00 00 00" />
+              </div>
             </div>
             <div class="space-y-2">
               <Label for="linkedinUrl" :class="cn(errors.linkedinUrl && 'text-destructive')">LinkedIn</Label>
-              <Input
-                id="linkedinUrl"
-                v-model="form.linkedinUrl"
-                placeholder="https://linkedin.com/in/…"
-                :class="cn(errors.linkedinUrl && 'border-destructive')"
-              />
+              <div class="relative">
+                <Linkedin class="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
+                <Input
+                  id="linkedinUrl"
+                  v-model="form.linkedinUrl"
+                  placeholder="https://linkedin.com/in/…"
+                  class="pl-9"
+                  :class="cn(errors.linkedinUrl && 'border-destructive')"
+                />
+              </div>
               <p v-if="errors.linkedinUrl" class="text-xs text-destructive">{{ errors.linkedinUrl }}</p>
             </div>
           </div>
-        </div>
+        </form>
+      </div>
 
-        <SheetFooter class="pt-4 border-t gap-2">
-          <SheetClose as-child>
-            <Button type="button" variant="outline" :disabled="isPending">Annuler</Button>
-          </SheetClose>
-          <Button type="submit" :disabled="isPending">
-            <Loader2 v-if="isPending" class="mr-2 h-4 w-4 animate-spin" />
-            {{ isPending ? 'Enregistrement…' : 'Enregistrer' }}
-          </Button>
-        </SheetFooter>
-      </form>
+      <SheetFooter class="p-6 border-t bg-muted/20 gap-2 sm:gap-0">
+        <SheetClose as-child>
+          <Button type="button" variant="outline" :disabled="isPending">Annuler</Button>
+        </SheetClose>
+        <Button type="submit" form="alumni-form" :disabled="isPending">
+          <Loader2 v-if="isPending" class="mr-2 h-4 w-4 animate-spin" />
+          {{ isPending ? 'Enregistrement…' : 'Enregistrer' }}
+        </Button>
+      </SheetFooter>
     </SheetContent>
   </Sheet>
 </template>

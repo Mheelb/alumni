@@ -5,10 +5,12 @@ import fastifySwagger from '@fastify/swagger';
 import fastifySwaggerUi from '@fastify/swagger-ui';
 import mongoose from 'mongoose';
 import { Alumni } from './models/Alumni';
+import { User } from './models/User'; // Add this import
 import { auth } from './lib/auth';
 import { AlumniProfileSchema, AlumniUpdateSchema } from '@alumni/shared-schema';
 import { scraperRoutes } from './routes/scraper';
 import { dashboardRoutes } from './routes/dashboard';
+import { profileUpdateRequestRoutes } from './routes/profile-update-requests';
 import { requireAdmin, requireAuth } from './lib/middleware';
 
 const fastify = Fastify({ logger: true, bodyLimit: 5 * 1024 * 1024 });
@@ -169,6 +171,7 @@ fastify.register(fastifySwaggerUi, {
 
 fastify.register(scraperRoutes);
 fastify.register(dashboardRoutes);
+fastify.register(profileUpdateRequestRoutes);
 
 // ─── BetterAuth handler ───────────────────────────────────────────────────────
 
@@ -355,9 +358,67 @@ fastify.patch('/admin/users/:id/toggle-status', {
       });
       return { status: 'success', message: 'Compte désactivé avec succès' };
     }
-  } catch (err) {
+  } catch (err: any) {
     fastify.log.error(err);
-    return reply.status(500).send({ status: 'error', message: 'Erreur lors du changement de statut du compte' });
+    return reply.status(500).send({ status: 'error', message: err.message || 'Erreur lors de la modification' });
+  }
+});
+
+// Admin: Create another admin
+fastify.post('/admin/users', {
+  schema: {
+    tags: ['Utilisateurs'],
+    summary: 'Créer un administrateur',
+    description: '🛡️ **Admin** — Crée manuellement un nouveau compte administrateur.',
+    body: {
+      type: 'object',
+      required: ['email', 'password', 'firstName', 'lastName'],
+      properties: {
+        email:     { type: 'string', format: 'email' },
+        password:  { type: 'string', minLength: 8 },
+        firstName: { type: 'string' },
+        lastName:  { type: 'string' },
+        name:      { type: 'string' },
+      },
+    },
+    response: {
+      200: SuccessMsg,
+      409: ErrorResp,
+      500: ErrorResp,
+    },
+  },
+  preHandler: requireAdmin,
+}, async (request, reply) => {
+  try {
+    const { email, password, firstName, lastName, name } = request.body as any;
+    
+    // Check if user already exists
+    const existing = await mongoose.connection.db?.collection('user').findOne({ email });
+    if (existing) {
+      return reply.status(409).send({ status: 'error', message: 'Cet email est déjà utilisé' });
+    }
+
+    // Use BetterAuth to create the user
+    await auth.api.signUpEmail({
+      body: {
+        email,
+        password,
+        name: name || `${firstName} ${lastName}`,
+        firstName,
+        lastName,
+      },
+    });
+
+    // Force role to admin directly in DB
+    await mongoose.connection.db?.collection('user').updateOne(
+      { email },
+      { $set: { role: 'admin' } }
+    );
+
+    return { status: 'success', message: 'Administrateur créé avec succès' };
+  } catch (err: any) {
+    fastify.log.error(err);
+    return reply.status(500).send({ status: 'error', message: err.message || 'Erreur lors de la création' });
   }
 });
 

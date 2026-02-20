@@ -40,6 +40,18 @@ export type AlumniProfileType = z.infer<typeof AlumniProfileSchema>;
 export const AlumniUpdateSchema = AlumniProfileSchema.partial().omit({ email: true });
 export type AlumniUpdateType = z.infer<typeof AlumniUpdateSchema>;
 
+export const ProfileUpdateRequestStatusEnum = z.enum(['pending', 'accepted', 'refused']);
+export type ProfileUpdateRequestStatus = z.infer<typeof ProfileUpdateRequestStatusEnum>;
+
+export const ProfileUpdateRequestSchema = z.object({
+  alumniId: z.string(),
+  userId: z.string(),
+  changes: AlumniUpdateSchema,
+  status: ProfileUpdateRequestStatusEnum.default('pending'),
+});
+
+export type ProfileUpdateRequestType = z.infer<typeof ProfileUpdateRequestSchema>;
+
 export const SignUpSchema = z.object({
   email: z.string().email("Adresse email invalide"),
   password: z.string().min(8, "Le mot de passe doit contenir au moins 8 caractères"),
