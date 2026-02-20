@@ -87,6 +87,40 @@ bun dev:web
 
 ---
 
+## 🧪 Tests
+
+Les tests couvrent les trois packages du monorepo.
+
+| Package | Framework | Périmètre |
+|---|---|---|
+| `libs/shared-schema` | Bun test | Validation Zod (schemas, erreurs, cas limites) |
+| `apps/api` | Bun test + MongoDB in-memory | Routes Fastify (CRUD alumni, codes HTTP, health) |
+| `apps/web` | Vitest + Vue Test Utils | Composants Vue, fonctions utilitaires |
+
+### Lancer tous les tests
+```bash
+bun test
+```
+
+### Lancer les tests d'un package
+```bash
+bun test:schema   # Schemas Zod
+bun test:api      # Routes Fastify (MongoDB in-memory)
+bun test:web      # Composants Vue
+```
+
+### CI — Protection de branche
+
+Chaque Pull Request vers `main` ou `dev` déclenche automatiquement 3 jobs GitHub Actions en parallèle. Le merge est bloqué si l'un d'eux échoue.
+
+Pour activer la protection de branche sur GitHub (à répéter pour `main` et `dev`) :
+1. Aller dans **Settings → Branches → Add branch protection rule**
+2. Branch name pattern : `main` puis `dev`
+3. Cocher **Require status checks to pass before merging**
+4. Ajouter les checks : `Tests — shared-schema`, `Tests — API`, `Tests — Web`
+
+---
+
 ## 📁 Structure des dossiers
 ```text
 .
