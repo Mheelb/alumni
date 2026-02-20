@@ -155,13 +155,13 @@ async function handleSubmit() {
         firstName: form.value.firstName!,
         lastName: form.value.lastName!,
         email: form.value.email!,
-        graduationYear: form.value.graduationYear || undefined,
-        diploma: form.value.diploma || undefined,
-        city: form.value.city || undefined,
-        company: form.value.company || undefined,
-        jobTitle: form.value.jobTitle || undefined,
-        phone: form.value.phone || undefined,
-        linkedinUrl: form.value.linkedinUrl || undefined,
+        graduationYear: form.value.graduationYear || null,
+        diploma: form.value.diploma || null,
+        city: form.value.city || null,
+        company: form.value.company || null,
+        jobTitle: form.value.jobTitle || null,
+        phone: form.value.phone || null,
+        linkedinUrl: form.value.linkedinUrl || null,
         status: 'invited',
         isActive: true,
       })
@@ -169,13 +169,13 @@ async function handleSubmit() {
       const updateBody: AlumniUpdateType = {
         firstName: form.value.firstName,
         lastName: form.value.lastName,
-        graduationYear: form.value.graduationYear || undefined,
-        diploma: form.value.diploma || undefined,
-        city: form.value.city || undefined,
-        company: form.value.company || undefined,
-        jobTitle: form.value.jobTitle || undefined,
-        phone: form.value.phone || undefined,
-        linkedinUrl: form.value.linkedinUrl || undefined,
+        graduationYear: form.value.graduationYear || null,
+        diploma: form.value.diploma || null,
+        city: form.value.city || null,
+        company: form.value.company || null,
+        jobTitle: form.value.jobTitle || null,
+        phone: form.value.phone || null,
+        linkedinUrl: form.value.linkedinUrl || null,
       }
       await updateMutation.mutateAsync({ id: props.alumni._id, body: updateBody })
     }
@@ -292,7 +292,7 @@ async function handleSubmit() {
                 v-model.number="form.graduationYear"
                 :placeholder="String(currentYear)"
                 min="1900"
-                :max="currentYear + 10"
+                :max="currentYear"
               />
             </div>
             <div class="space-y-2">

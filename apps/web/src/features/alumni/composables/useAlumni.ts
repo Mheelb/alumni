@@ -5,7 +5,7 @@ import type { AlumniProfileType, AlumniUpdateType } from '@alumni/shared-schema'
 
 export interface StatsData {
   total: number
-  byStatus: { invited: number; registered: number; completed: number }
+  byStatus: { invited: number; registered: number }
   activationRate: number
   recentAlumni: Array<{
     _id: string
@@ -60,7 +60,7 @@ export function useAlumniList(filters: Ref<AlumniFilters>) {
 
 export type AlumniDetail = AlumniProfileType & { _id: string; createdAt: string; updatedAt: string }
 
-export function useAlumniDetail(id: Ref<string>) {
+export function useAlumniDetail(id: Ref<string | undefined>) {
   return useQuery({
     queryKey: ['alumni', id],
     queryFn: async (): Promise<AlumniDetail> => {

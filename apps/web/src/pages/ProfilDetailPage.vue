@@ -23,6 +23,7 @@ import {
   Pencil,
   UserX,
   Trash2,
+  UserPlus,
   Mail,
   Phone,
   MapPin,
@@ -132,7 +133,11 @@ function formatDate(d: string) {
                 </p>
               </div>
             </div>
-            <div v-if="isAdmin" class="flex gap-2 self-start sm:self-center">
+            <div v-if="isAdmin" class="flex flex-wrap gap-2 items-center justify-start sm:justify-end mt-4 sm:mt-0">
+              <Button v-if="alumni.status === 'invited'" variant="outline" size="sm" class="gap-2 text-blue-600 border-blue-200 hover:bg-blue-50" @click="router.push('/admin/create-account/' + alumni._id)">
+                <UserPlus class="h-4 w-4" />
+                Créer un compte
+              </Button>
               <Button variant="outline" size="sm" class="gap-2" @click="openEdit">
                 <Pencil class="h-4 w-4" />
                 Modifier

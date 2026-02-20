@@ -22,6 +22,7 @@ import {
   TrendingUp,
   ArrowRight,
   Loader2,
+  Bell,
 } from 'lucide-vue-next'
 
 const router = useRouter()
@@ -54,14 +55,12 @@ onMounted(async () => {
 
 const { data: stats, isLoading: statsLoading } = useStats(isAdmin)
 
-const statusBadgeVariant = (status: string): 'default' | 'secondary' | 'outline' => {
-  if (status === 'completed') return 'default'
+const statusBadgeVariant = (status: string): 'secondary' | 'outline' => {
   if (status === 'registered') return 'secondary'
   return 'outline'
 }
 
 const statusLabel = (status: string) => {
-  if (status === 'completed') return 'Complété'
   if (status === 'registered') return 'Inscrit'
   return 'Invité'
 }
@@ -145,19 +144,7 @@ const statusLabel = (status: string) => {
             <p class="text-3xl font-bold">
               {{ stats.activationRate }}<span class="text-lg font-medium text-muted-foreground">%</span>
             </p>
-            <p class="text-xs text-muted-foreground mt-1">inscrits + profils complétés</p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader class="pb-2">
-            <CardTitle class="text-sm font-medium text-muted-foreground flex items-center gap-2">
-              <UserCheck class="h-4 w-4" />
-              Profils complétés
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p class="text-3xl font-bold">{{ stats.byStatus.completed }}</p>
+            <p class="text-xs text-muted-foreground mt-1">alumni ayant créé leur compte</p>
           </CardContent>
         </Card>
 
@@ -177,10 +164,18 @@ const statusLabel = (status: string) => {
               <span class="text-muted-foreground">Inscrits</span>
               <span class="font-medium">{{ stats.byStatus.registered }}</span>
             </div>
-            <div class="flex items-center justify-between text-sm">
-              <span class="text-muted-foreground">Complétés</span>
-              <span class="font-medium">{{ stats.byStatus.completed }}</span>
-            </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader class="pb-2">
+            <CardTitle class="text-sm font-medium text-muted-foreground flex items-center gap-2">
+              <Bell class="h-4 w-4" />
+              Notifications
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <p class="text-sm text-muted-foreground">Aucune notification</p>
           </CardContent>
         </Card>
       </div>

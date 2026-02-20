@@ -40,6 +40,7 @@ import {
   Pencil,
   UserX,
   Trash2,
+  UserPlus,
   ChevronLeft,
   ChevronRight,
   Loader2,
@@ -260,7 +261,6 @@ const promoYears = Array.from({ length: 30 }, (_, i) => currentYear - i)
             <SelectItem value="_all">Tous les statuts</SelectItem>
             <SelectItem value="invited">Invité</SelectItem>
             <SelectItem value="registered">Inscrit</SelectItem>
-            <SelectItem value="completed">Profil complété</SelectItem>
           </SelectContent>
         </Select>
 
@@ -386,6 +386,16 @@ const promoYears = Array.from({ length: 30 }, (_, i) => currentYear - i)
                   <Eye class="h-4 w-4" />
                 </Button>
                 <template v-if="isAdmin">
+                  <Button
+                    v-if="row.status === 'invited'"
+                    variant="ghost"
+                    size="icon"
+                    class="h-8 w-8 text-blue-600 hover:text-blue-700 hover:bg-blue-50"
+                    title="Créer un compte"
+                    @click="router.push('/admin/create-account/' + row._id)"
+                  >
+                    <UserPlus class="h-4 w-4" />
+                  </Button>
                   <Button
                     variant="ghost"
                     size="icon"

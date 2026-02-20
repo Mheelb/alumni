@@ -5,4 +5,12 @@ export const authClient = createAuthClient({
     fetchOptions: {
         credentials: "include",
     },
+    user: {
+        additionalFields: {
+            firstName: { type: "string" },
+            lastName: { type: "string" },
+            graduationYear: { type: "number" },
+            alumniId: { type: "string" },
+        },
+    },
 });
