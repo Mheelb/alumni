@@ -118,16 +118,16 @@ const statusLabel = (status: string) => {
           My Digital School Alumnis centralise l'annuaire de vos diplômés, les
           événements et les offres d'emploi en un seul endroit.
         </p>
-        <ul class="text-sm text-muted-foreground text-left space-y-2 mt-2">
-          <li class="flex items-center gap-2">
+        <ul class="text-sm text-muted-foreground space-y-2 mt-2">
+          <li class="flex items-center justify-center gap-2">
             <Users class="h-4 w-4 shrink-0" />
             Annuaire complet des diplômés
           </li>
-          <li class="flex items-center gap-2">
+          <li class="flex items-center justify-center gap-2">
             <Calendar class="h-4 w-4 shrink-0" />
             Événements alumni
           </li>
-          <li class="flex items-center gap-2">
+          <li class="flex items-center justify-center gap-2">
             <Briefcase class="h-4 w-4 shrink-0" />
             Annonces d'emploi
           </li>
