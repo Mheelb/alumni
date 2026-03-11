@@ -33,6 +33,8 @@ import {
   Building2,
   MapPin,
   Calendar,
+  CalendarDays,
+  CheckCircle,
 } from 'lucide-vue-next'
 import AlumniStatusBadge from '@/features/alumni/components/AlumniStatusBadge.vue'
 
@@ -197,6 +199,41 @@ const lineOptions = {
   },
 }
 
+// ─── Événements par mois ─────────────────────────────────────────────────────
+const eventsByMonthData = computed(() => ({
+  labels: stats.value?.events.byMonth.map(d => d.month) ?? [],
+  datasets: [{
+    label: 'Événements',
+    data: stats.value?.events.byMonth.map(d => d.count) ?? [],
+    backgroundColor: 'hsl(186, 80%, 45%)',
+    borderRadius: 6,
+  }],
+}))
+
+// ─── Annonces par type ───────────────────────────────────────────────────────
+const jobsByTypeData = computed(() => ({
+  labels: stats.value?.jobs.byType.map(d => d.type) ?? [],
+  datasets: [{
+    data: stats.value?.jobs.byType.map(d => d.count) ?? [],
+    backgroundColor: COLORS_PIE,
+    borderWidth: 0,
+    hoverOffset: 6,
+  }],
+}))
+
+// ─── Statut des annonces ──────────────────────────────────────────────────────
+const jobsByStatusData = computed(() => ({
+  labels: ['Brouillons', 'Actives', 'Clôturées'],
+  datasets: [{
+    data: stats.value
+      ? [stats.value.jobs.byStatus.draft, stats.value.jobs.byStatus.active, stats.value.jobs.byStatus.closed]
+      : [],
+    backgroundColor: ['hsl(215, 20%, 65%)', 'hsl(142, 71%, 45%)', 'hsl(0, 84%, 60%)'],
+    borderWidth: 0,
+    hoverOffset: 6,
+  }],
+}))
+
 function formatDate(d: string) {
   return new Date(d).toLocaleDateString('fr-FR', { day: '2-digit', month: 'short', year: 'numeric' })
 }
@@ -234,6 +271,37 @@ const kpis = computed(() => [
     color: 'text-amber-600',
     bg: 'bg-amber-50',
     suffix: '%',
+  },
+])
+
+const eventKpis = computed(() => [
+  {
+    label: 'Événements à venir',
+    value: stats.value?.events.upcoming ?? '—',
+    icon: CalendarDays,
+    color: 'text-cyan-600',
+    bg: 'bg-cyan-50',
+  },
+  {
+    label: 'Total événements',
+    value: stats.value?.events.total ?? '—',
+    icon: Calendar,
+    color: 'text-indigo-600',
+    bg: 'bg-indigo-50',
+  },
+  {
+    label: 'Annonces actives',
+    value: stats.value?.jobs.byStatus.active ?? '—',
+    icon: Briefcase,
+    color: 'text-emerald-600',
+    bg: 'bg-emerald-50',
+  },
+  {
+    label: 'Total annonces',
+    value: stats.value?.jobs.total ?? '—',
+    icon: CheckCircle,
+    color: 'text-rose-600',
+    bg: 'bg-rose-50',
   },
 ])
 </script>
@@ -368,6 +436,70 @@ const kpis = computed(() => [
               <Line :data="inscriptionChartData" :options="lineOptions" />
             </div>
             <p v-else class="text-sm text-muted-foreground text-center py-10">Aucune donnée d'inscription disponible.</p>
+          </CardContent>
+        </Card>
+      </div>
+
+      <!-- KPI Cards Événements & Annonces -->
+      <div class="grid grid-cols-2 lg:grid-cols-4 gap-4">
+        <Card v-for="kpi in eventKpis" :key="kpi.label">
+          <CardContent class="p-5">
+            <div class="flex items-start justify-between">
+              <div class="space-y-1">
+                <p class="text-xs text-muted-foreground font-medium uppercase tracking-wider">{{ kpi.label }}</p>
+                <p class="text-3xl font-bold text-slate-900">{{ kpi.value }}</p>
+              </div>
+              <div :class="['p-2 rounded-lg', kpi.bg]">
+                <component :is="kpi.icon" :class="['h-5 w-5', kpi.color]" />
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
+      <!-- Ligne : Événements par mois + Annonces par type + Statut annonces -->
+      <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <Card>
+          <CardHeader class="pb-2">
+            <CardTitle class="text-base flex items-center gap-2">
+              <CalendarDays class="h-4 w-4 text-primary" />
+              Événements par mois
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div v-if="stats.events.byMonth.length" class="h-56">
+              <Bar :data="eventsByMonthData" :options="graduationChartOptions" />
+            </div>
+            <p v-else class="text-sm text-muted-foreground text-center py-10">Aucune donnée disponible.</p>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader class="pb-2">
+            <CardTitle class="text-base flex items-center gap-2">
+              <Briefcase class="h-4 w-4 text-primary" />
+              Annonces par type
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div v-if="stats.jobs.byType.length" class="h-56">
+              <Doughnut :data="jobsByTypeData" :options="donutOptions" />
+            </div>
+            <p v-else class="text-sm text-muted-foreground text-center py-10">Aucune donnée disponible.</p>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader class="pb-2">
+            <CardTitle class="text-base flex items-center gap-2">
+              <CheckCircle class="h-4 w-4 text-primary" />
+              Statut des annonces
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div class="h-56">
+              <Doughnut :data="jobsByStatusData" :options="donutOptions" />
+            </div>
           </CardContent>
         </Card>
       </div>

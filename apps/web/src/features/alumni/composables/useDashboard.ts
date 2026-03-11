@@ -23,6 +23,18 @@ export interface DashboardStats {
     status: 'unlinked' | 'invited' | 'registered'
     createdAt: string
   }>
+  events: {
+    total: number
+    upcoming: number
+    ongoing: number
+    past: number
+    byMonth: Array<{ month: string; count: number }>
+  }
+  jobs: {
+    total: number
+    byStatus: { draft: number; active: number; closed: number }
+    byType: Array<{ type: string; count: number }>
+  }
 }
 
 export function useDashboardStats(enabled: Ref<boolean>) {

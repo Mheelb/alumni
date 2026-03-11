@@ -1,5 +1,7 @@
 import type { FastifyInstance } from 'fastify';
 import { Alumni } from '../models/Alumni';
+import { Event } from '../models/Event';
+import { JobAnnouncement } from '../models/JobAnnouncement';
 import { requireAdmin } from '../lib/middleware';
 
 const FREELANCE_PATTERN = 'freelance|self.?employed|independant|auto.?entrepreneur|autoentrepreneur';
@@ -67,6 +69,37 @@ export async function dashboardRoutes(fastify: FastifyInstance) {
                     },
                   },
                 },
+                events: {
+                  type: 'object',
+                  properties: {
+                    total: { type: 'number' },
+                    upcoming: { type: 'number' },
+                    ongoing: { type: 'number' },
+                    past: { type: 'number' },
+                    byMonth: {
+                      type: 'array',
+                      items: { type: 'object', properties: { month: { type: 'string' }, count: { type: 'number' } } },
+                    },
+                  },
+                },
+                jobs: {
+                  type: 'object',
+                  properties: {
+                    total: { type: 'number' },
+                    byStatus: {
+                      type: 'object',
+                      properties: {
+                        draft: { type: 'number' },
+                        active: { type: 'number' },
+                        closed: { type: 'number' },
+                      },
+                    },
+                    byType: {
+                      type: 'array',
+                      items: { type: 'object', properties: { type: { type: 'string' }, count: { type: 'number' } } },
+                    },
+                  },
+                },
               },
             },
           },
@@ -75,6 +108,8 @@ export async function dashboardRoutes(fastify: FastifyInstance) {
     },
   }, async (_request, reply) => {
     const baseMatch = { isActive: true };
+
+    const now = new Date();
 
     const [
       total,
@@ -87,6 +122,14 @@ export async function dashboardRoutes(fastify: FastifyInstance) {
       employedCount,
       freelanceCount,
       recentAlumni,
+      eventsTotal,
+      eventsUpcoming,
+      eventsOngoing,
+      eventsPast,
+      eventsByMonth,
+      jobsTotal,
+      jobsByStatusRaw,
+      jobsByType,
     ] = await Promise.all([
       Alumni.countDocuments(baseMatch),
 
@@ -151,6 +194,25 @@ export async function dashboardRoutes(fastify: FastifyInstance) {
         .limit(5)
         .select('firstName lastName email status createdAt')
         .lean(),
+
+      Event.countDocuments({}),
+      Event.countDocuments({ startDate: { $gt: now } }),
+      Event.countDocuments({ startDate: { $lte: now }, endDate: { $gte: now } }),
+      Event.countDocuments({ endDate: { $lt: now } }),
+      Event.aggregate<{ month: string; count: number }>([
+        { $group: { _id: { $dateToString: { format: '%Y-%m', date: '$startDate' } }, count: { $sum: 1 } } },
+        { $sort: { _id: 1 } },
+        { $project: { month: '$_id', count: 1, _id: 0 } },
+      ]),
+
+      JobAnnouncement.countDocuments({}),
+      JobAnnouncement.aggregate<{ _id: string; count: number }>([
+        { $group: { _id: '$status', count: { $sum: 1 } } },
+      ]),
+      JobAnnouncement.aggregate<{ type: string; count: number }>([
+        { $group: { _id: '$type', count: { $sum: 1 } } },
+        { $project: { type: '$_id', count: 1, _id: 0 } },
+      ]),
     ]);
 
     const byStatus = { unlinked: 0, invited: 0, registered: 0 };
@@ -163,6 +225,13 @@ export async function dashboardRoutes(fastify: FastifyInstance) {
     const activationRate = total > 0 ? Math.round((byStatus.registered / total) * 100) : 0;
     const employmentRate = total > 0 ? Math.round((employedCount / total) * 100) : 0;
     const freelanceRate = total > 0 ? Math.round((freelanceCount / total) * 100) : 0;
+
+    const jobsByStatus = { draft: 0, active: 0, closed: 0 };
+    for (const row of jobsByStatusRaw) {
+      if (row._id === 'draft') jobsByStatus.draft = row.count;
+      else if (row._id === 'active') jobsByStatus.active = row.count;
+      else if (row._id === 'closed') jobsByStatus.closed = row.count;
+    }
 
     return reply.send({
       status: 'success',
@@ -178,6 +247,18 @@ export async function dashboardRoutes(fastify: FastifyInstance) {
         byDiploma: byDiplomaRaw,
         byCreatedYear: byCreatedYearRaw,
         recentAlumni,
+        events: {
+          total: eventsTotal,
+          upcoming: eventsUpcoming,
+          ongoing: eventsOngoing,
+          past: eventsPast,
+          byMonth: eventsByMonth,
+        },
+        jobs: {
+          total: jobsTotal,
+          byStatus: jobsByStatus,
+          byType: jobsByType,
+        },
       },
     });
   });

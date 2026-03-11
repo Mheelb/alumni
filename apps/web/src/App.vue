@@ -19,12 +19,13 @@ import {
   LogOut,
   User,
   LayoutDashboard,
-  FileEdit
+  CalendarDays,
 } from 'lucide-vue-next';
 import { authClient } from '@/lib/auth-client';
 import type { AppUser } from '@/types/user';
 import { useAlumniDetail } from '@/features/alumni/composables/useAlumni';
 import { RouterView, RouterLink, useRouter, useRoute } from 'vue-router';
+import { VueQueryDevtools } from '@tanstack/vue-query-devtools';
 import { useProfileUpdateRequests } from '@/features/alumni/composables/useProfileUpdateRequests';
 import logo from '@/assets/logo.svg';
 
@@ -67,6 +68,18 @@ function getInitials(name: string = '') {
                 Dashboard
               </Button>
             </RouterLink>
+             <RouterLink to="/feed">
+              <Button variant="ghost" size="sm" class="hidden sm:flex items-center gap-2">
+                <CalendarDays class="h-4 w-4" />
+                Feed
+              </Button>
+            </RouterLink>
+            <RouterLink to="/feed">
+              <Button variant="ghost" size="sm" class="hidden sm:flex items-center gap-2">
+                <CalendarDays class="h-4 w-4" />
+                Feed
+              </Button>
+            </RouterLink>
             <RouterLink to="/annuaire">
               <Button 
                 :variant="route.path.startsWith('/annuaire') ? 'secondary' : 'ghost'" 
@@ -76,6 +89,18 @@ function getInitials(name: string = '') {
               >
                 <Users class="h-4 w-4" />
                 Annuaire
+              </Button>
+            </RouterLink>
+            <RouterLink v-if="user?.role === 'admin'" to="/admin/events">
+              <Button variant="ghost" size="sm" class="hidden sm:flex items-center gap-2">
+                <CalendarDays class="h-4 w-4" />
+                Événements
+              </Button>
+            </RouterLink>
+            <RouterLink v-if="user?.role === 'admin'" to="/admin/job-announcements">
+              <Button variant="ghost" size="sm" class="hidden sm:flex items-center gap-2">
+                <Briefcase class="h-4 w-4" />
+                Annonces
               </Button>
             </RouterLink>
             <template v-if="user?.role === 'admin'">
@@ -156,6 +181,8 @@ function getInitials(name: string = '') {
 
       <RouterView />
     </main>
+
+    <VueQueryDevtools />
 
     <!-- Footer -->
     <footer class="border-t bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 py-6 md:py-0">

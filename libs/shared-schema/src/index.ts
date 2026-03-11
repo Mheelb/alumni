@@ -70,3 +70,46 @@ export const LoginSchema = z.object({
 });
 
 export type LoginType = z.infer<typeof LoginSchema>;
+
+// ─── Events ──────────────────────────────────────────────────────────────────
+
+export const EventSchema = z.object({
+  title: z.string().min(2, "Le titre doit contenir au moins 2 caractères"),
+  description: z.string().min(10, "La description doit contenir au moins 10 caractères"),
+  startDate: z.string().datetime("Date de début invalide"),
+  endDate: z.string().datetime("Date de fin invalide"),
+  location: z.string().min(2, "Le lieu doit contenir au moins 2 caractères"),
+  imageUrl: z.string().url("URL d'image invalide").optional().nullable(),
+});
+
+export const EventUpdateSchema = EventSchema.partial();
+export type EventInput = z.infer<typeof EventSchema>;
+export type EventUpdateInput = z.infer<typeof EventUpdateSchema>;
+
+export const AttendanceStatusEnum = z.enum(['going', 'interested', 'not_going']);
+export type AttendanceStatus = z.infer<typeof AttendanceStatusEnum>;
+
+// ─── Job Announcements ────────────────────────────────────────────────────────
+
+export const JobTypeEnum = z.enum(['CDI', 'CDD', 'stage', 'alternance', 'freelance']);
+export type JobType = z.infer<typeof JobTypeEnum>;
+
+export const JobStatusEnum = z.enum(['draft', 'active', 'closed']);
+export type JobStatus = z.infer<typeof JobStatusEnum>;
+
+export const JobInterestStatusEnum = z.enum(['interested', 'not_interested']);
+export type JobInterestStatus = z.infer<typeof JobInterestStatusEnum>;
+
+export const JobAnnouncementSchema = z.object({
+  title: z.string().min(2, "Le titre doit contenir au moins 2 caractères"),
+  company: z.string().min(2, "L'entreprise doit contenir au moins 2 caractères"),
+  type: JobTypeEnum,
+  location: z.string().min(2, "Le lieu doit contenir au moins 2 caractères"),
+  description: z.string().min(10, "La description doit contenir au moins 10 caractères"),
+  url: z.string().url("URL invalide").optional().nullable(),
+  status: JobStatusEnum.default('draft'),
+});
+
+export const JobAnnouncementUpdateSchema = JobAnnouncementSchema.partial();
+export type JobAnnouncementInput = z.infer<typeof JobAnnouncementSchema>;
+export type JobAnnouncementUpdateInput = z.infer<typeof JobAnnouncementUpdateSchema>;

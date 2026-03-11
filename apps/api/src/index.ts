@@ -5,11 +5,17 @@ import fastifySwagger from '@fastify/swagger';
 import fastifySwaggerUi from '@fastify/swagger-ui';
 import mongoose from 'mongoose';
 import { Alumni } from './models/Alumni';
-import { User } from './models/User'; // Add this import
+import { Event } from './models/Event';
+import { EventAttendance } from './models/EventAttendance';
+import { JobAnnouncement } from './models/JobAnnouncement';
+import { JobInterest } from './models/JobInterest';
+import { User } from './models/User';
 import { auth } from './lib/auth';
 import { AlumniProfileSchema, AlumniUpdateSchema } from '@alumni/shared-schema';
 import { scraperRoutes } from './routes/scraper';
 import { dashboardRoutes } from './routes/dashboard';
+import { eventRoutes } from './routes/events';
+import { jobAnnouncementRoutes } from './routes/jobAnnouncements';
 import { profileUpdateRequestRoutes } from './routes/profile-update-requests';
 import { requireAdmin, requireAuth } from './lib/middleware';
 
@@ -144,11 +150,13 @@ fastify.register(fastifySwagger, {
     },
     externalDocs: { description: 'Dépôt GitHub', url: 'https://github.com' },
     tags: [
-      { name: 'Alumni',       description: 'Gestion des profils alumni' },
-      { name: 'Utilisateurs', description: 'Gestion des comptes utilisateurs (🛡️ admin)' },
-      { name: 'Statistiques', description: 'Tableau de bord et statistiques (🛡️ admin)' },
-      { name: 'Scraper',      description: 'Import / synchronisation LinkedIn (🛡️ admin)' },
-      { name: 'Santé',        description: 'Disponibilité du serveur' },
+      { name: 'Alumni',             description: 'Gestion des profils alumni' },
+      { name: 'Utilisateurs',       description: 'Gestion des comptes utilisateurs (🛡️ admin)' },
+      { name: 'Statistiques',       description: 'Tableau de bord et statistiques (🛡️ admin)' },
+      { name: 'Scraper',            description: 'Import / synchronisation LinkedIn (🛡️ admin)' },
+      { name: 'Événements',         description: 'Gestion des événements et participations' },
+      { name: "Annonces d'emploi",  description: "Gestion des annonces d'emploi et intérêts" },
+      { name: 'Santé',              description: 'Disponibilité du serveur' },
     ],
     components: {
       securitySchemes: {
@@ -171,6 +179,8 @@ fastify.register(fastifySwaggerUi, {
 
 fastify.register(scraperRoutes);
 fastify.register(dashboardRoutes);
+fastify.register(eventRoutes);
+fastify.register(jobAnnouncementRoutes);
 fastify.register(profileUpdateRequestRoutes);
 
 // ─── BetterAuth handler ───────────────────────────────────────────────────────
@@ -1069,6 +1079,17 @@ const start = async () => {
   try {
     await mongoose.connect(MONGO_URI);
     fastify.log.info('Connected to MongoDB');
+
+    // Ensure collections and indexes exist for all models
+    await Promise.all([
+      Alumni.syncIndexes(),
+      Event.syncIndexes(),
+      EventAttendance.syncIndexes(),
+      JobAnnouncement.syncIndexes(),
+      JobInterest.syncIndexes(),
+    ]);
+    fastify.log.info('MongoDB indexes synced');
+
     await fastify.listen({ port: 3000, host: '0.0.0.0' });
   } catch (err) {
     fastify.log.error(err);
