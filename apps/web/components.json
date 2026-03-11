@@ -12,7 +12,21 @@
   "aliases": {
     "components": "@/components",
     "utils": "@/lib/utils",
-    "ui": "@/components/ui"
+    "ui": "@/components/ui",
+    "lib": "@/lib",
+    "hooks": "@/hooks",
+    "composables": "@/composables"
   },
-  "iconLibrary": "lucide"
+  "iconLibrary": "lucide",
+  "resolvedPaths": {
+    "cwd": "/Users/matteohouillon/Documents/MDS/alumni/apps/web",
+    "tailwindConfig": "/Users/matteohouillon/Documents/MDS/alumni/apps/web/tailwind.config.js",
+    "tailwindCss": "/Users/matteohouillon/Documents/MDS/alumni/apps/web/src/style.css",
+    "utils": "/Users/matteohouillon/Documents/MDS/alumni/apps/web/src/lib/utils.ts",
+    "components": "/Users/matteohouillon/Documents/MDS/alumni/apps/web/src/components",
+    "lib": "/Users/matteohouillon/Documents/MDS/alumni/apps/web/src/lib",
+    "hooks": "/Users/matteohouillon/Documents/MDS/alumni/apps/web/src/hooks",
+    "composables": "/Users/matteohouillon/Documents/MDS/alumni/apps/web/src/composables",
+    "ui": "/Users/matteohouillon/Documents/MDS/alumni/apps/web/src/components/ui"
+  }
 }

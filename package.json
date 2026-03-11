@@ -6,7 +6,11 @@
   ],
   "scripts": {
     "dev:api": "bun --cwd apps/api dev",
-    "dev:web": "bun --cwd apps/web dev"
+    "dev:web": "bun --cwd apps/web dev",
+    "test": "bun run test:schema && bun run test:api && bun run test:web",
+    "test:schema": "bun --cwd libs/shared-schema test",
+    "test:api": "bun --cwd apps/api test",
+    "test:web": "cd apps/web && npx vitest run"
   },
   "devDependencies": {
     "@nx/js": "^22.5.1",
