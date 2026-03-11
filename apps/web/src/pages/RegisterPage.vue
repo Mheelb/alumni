@@ -3,7 +3,7 @@ import RegisterForm from '@/features/auth/components/RegisterForm.vue'
 </script>
 
 <template>
-  <div class="container flex items-center justify-center py-12 md:py-24">
+  <div class="container flex-1 flex items-center justify-center py-12 md:py-24">
     <RegisterForm />
   </div>
 </template>
