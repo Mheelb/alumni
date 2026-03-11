@@ -288,6 +288,7 @@ fastify.get('/admin/users', {
                 role:      { type: 'string' },
                 alumniId:  { type: 'string', nullable: true },
                 banned:    { type: 'boolean', nullable: true },
+                createdAt: { type: 'string', nullable: true },
               },
             },
           },
