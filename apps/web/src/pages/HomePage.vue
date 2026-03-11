@@ -1,10 +1,15 @@
 <script setup lang="ts">
-import { ref, reactive, onMounted } from 'vue'
-import { useRouter } from 'vue-router'
-import axios from 'axios'
-import { authClient } from '@/lib/auth-client'
-import { useStats, exportAlumniCsv } from '@/features/alumni/composables/useAlumni'
-import { useProfileUpdateRequests } from '@/features/alumni/composables/useProfileUpdateRequests'
+import { ref, computed, reactive, onMounted } from "vue";
+import { useRouter } from "vue-router";
+import axios from "axios";
+import { authClient } from "@/lib/auth-client";
+import {
+  useStats,
+  exportAlumniCsv,
+} from "@/features/alumni/composables/useAlumni";
+import { useEvents } from "@/features/events/composables/useEvents";
+import { useJobAnnouncements } from "@/features/events/composables/useJobAnnouncements";
+import { useProfileUpdateRequests } from "@/features/alumni/composables/useProfileUpdateRequests";
 import {
   Button,
   Card,
@@ -12,7 +17,7 @@ import {
   CardTitle,
   CardContent,
   Badge,
-} from '@/components/ui'
+} from "@/components/ui";
 import {
   Users,
   UserCheck,
@@ -24,71 +29,94 @@ import {
   ArrowRight,
   Loader2,
   Bell,
+  MapPin,
   FileEdit,
-} from 'lucide-vue-next'
+} from "lucide-vue-next";
 
-const router = useRouter()
+const router = useRouter();
 
-const API = import.meta.env.VITE_API_URL || 'http://localhost:3000'
+const API = import.meta.env.VITE_API_URL || "http://localhost:3000";
 
-const isSessionPending = ref(true)
-const isLoggedIn = ref(false)
-const isAdmin = ref(false)
-const firstName = ref('')
-const myAlumniId = ref<string | null>(null)
+const isSessionPending = ref(true);
+const isLoggedIn = ref(false);
+const isAdmin = ref(false);
+const firstName = ref("");
+const myAlumniId = ref<string | null>(null);
 
 onMounted(async () => {
-  const { data: session } = await authClient.getSession()
+  const { data: session } = await authClient.getSession();
   if (session) {
-    isLoggedIn.value = true
-    isAdmin.value = (session.user as { role?: string })?.role === 'admin'
-    firstName.value = session.user?.name?.split(' ')[0] ?? ''
+    isLoggedIn.value = true;
+    isAdmin.value = (session.user as { role?: string })?.role === "admin";
+    firstName.value = session.user?.name?.split(" ")[0] ?? "";
     if (!isAdmin.value) {
       try {
-        const { data } = await axios.get<{ data: { _id: string } }>(`${API}/alumni/me`, { withCredentials: true })
-        myAlumniId.value = data.data._id
+        const { data } = await axios.get<{ data: { _id: string } }>(
+          `${API}/alumni/me`,
+          { withCredentials: true },
+        );
+        myAlumniId.value = data.data._id;
       } catch {
         // profil alumni non trouvé, on reste sur l'annuaire
       }
     }
   }
-  isSessionPending.value = false
-})
+  isSessionPending.value = false;
+});
 
-const { data: stats, isLoading: statsLoading } = useStats(isAdmin)
-const pendingFilters = reactive({ status: 'pending' as const })
-const { data: pendingRequests, isLoading: requestsLoading } = useProfileUpdateRequests(pendingFilters, isAdmin)
+const { data: stats, isLoading: statsLoading } = useStats(isAdmin);
+const { data: events } = useEvents();
+const { data: jobs } = useJobAnnouncements();
 
-const statusBadgeVariant = (status: string): 'default' | 'secondary' | 'outline' => {
-  if (status === 'registered') return 'default'
-  if (status === 'invited') return 'secondary'
-  return 'outline'
-}
+const upcomingEvents = computed(() =>
+  (events.value ?? []).filter((e) => e.status === "upcoming").slice(0, 3),
+);
+const activeJobs = computed(() =>
+  (jobs.value ?? []).filter((j) => j.status === "active").slice(0, 3),
+);
+const pendingFilters = reactive({ status: "pending" as const });
+const { data: pendingRequests, isLoading: requestsLoading } =
+  useProfileUpdateRequests(pendingFilters, isAdmin);
+
+const statusBadgeVariant = (
+  status: string,
+): "default" | "secondary" | "outline" => {
+  if (status === "registered") return "default";
+  if (status === "invited") return "secondary";
+  return "outline";
+};
 
 const statusLabel = (status: string) => {
-  if (status === 'registered') return 'Inscrit'
-  if (status === 'invited') return 'Invité'
-  return 'Sans compte'
-}
+  if (status === "registered") return "Inscrit";
+  if (status === "invited") return "Invité";
+  return "Sans compte";
+};
 </script>
 
 <template>
   <div class="flex-1 flex flex-col justify-center">
     <!-- Chargement de la session -->
-    <div v-if="isSessionPending" class="flex items-center justify-center py-24 text-muted-foreground gap-2">
+    <div
+      v-if="isSessionPending"
+      class="flex items-center justify-center py-24 text-muted-foreground gap-2"
+    >
       <Loader2 class="h-5 w-5 animate-spin" />
     </div>
 
     <!-- ──────────────────────────────────────────────────
          VUE 1 : Non connecté — Landing page
     ─────────────────────────────────────────────────── -->
-    <div v-else-if="!isLoggedIn" class="container flex flex-col items-center justify-center py-24 gap-8 text-center">
+    <div
+      v-else-if="!isLoggedIn"
+      class="container flex flex-col items-center justify-center py-24 gap-8 text-center"
+    >
       <div class="flex flex-col items-center gap-4 max-w-xl">
         <h1 class="text-4xl font-bold tracking-tight">
           Gérez votre réseau de diplômés
         </h1>
         <p class="text-muted-foreground text-lg">
-          My Digital School Alumnis centralise l'annuaire de vos diplômés, les événements et les offres d'emploi en un seul endroit.
+          My Digital School Alumnis centralise l'annuaire de vos diplômés, les
+          événements et les offres d'emploi en un seul endroit.
         </p>
         <ul class="text-sm text-muted-foreground text-left space-y-2 mt-2">
           <li class="flex items-center gap-2">
@@ -97,11 +125,11 @@ const statusLabel = (status: string) => {
           </li>
           <li class="flex items-center gap-2">
             <Calendar class="h-4 w-4 shrink-0" />
-            Gestion des événements <span class="text-xs ml-1">(bientôt)</span>
+            Événements alumni
           </li>
           <li class="flex items-center gap-2">
             <Briefcase class="h-4 w-4 shrink-0" />
-            Annonces emploi <span class="text-xs ml-1">(bientôt)</span>
+            Annonces d'emploi
           </li>
         </ul>
         <Button size="lg" class="mt-4 gap-2" @click="router.push('/login')">
@@ -116,11 +144,18 @@ const statusLabel = (status: string) => {
     ─────────────────────────────────────────────────── -->
     <div v-else-if="isAdmin" class="container py-8 space-y-6">
       <div>
-        <h1 class="text-2xl font-bold tracking-tight">Bonjour, {{ firstName }}</h1>
-        <p class="text-muted-foreground text-sm mt-1">Tableau de bord — My Digital School Alumnis</p>
+        <h1 class="text-2xl font-bold tracking-tight">
+          Bonjour, {{ firstName }}
+        </h1>
+        <p class="text-muted-foreground text-sm mt-1">
+          Tableau de bord — My Digital School Alumnis
+        </p>
       </div>
 
-      <div v-if="statsLoading" class="flex items-center gap-2 text-muted-foreground text-sm py-4">
+      <div
+        v-if="statsLoading"
+        class="flex items-center gap-2 text-muted-foreground text-sm py-4"
+      >
         <Loader2 class="h-4 w-4 animate-spin" />
         Chargement des statistiques…
       </div>
@@ -130,7 +165,9 @@ const statusLabel = (status: string) => {
         <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
           <Card>
             <CardHeader class="pb-2">
-              <CardTitle class="text-sm font-medium text-muted-foreground flex items-center gap-2">
+              <CardTitle
+                class="text-sm font-medium text-muted-foreground flex items-center gap-2"
+              >
                 <Users class="h-4 w-4" />
                 Alumnis actifs
               </CardTitle>
@@ -142,22 +179,31 @@ const statusLabel = (status: string) => {
 
           <Card>
             <CardHeader class="pb-2">
-              <CardTitle class="text-sm font-medium text-muted-foreground flex items-center gap-2">
+              <CardTitle
+                class="text-sm font-medium text-muted-foreground flex items-center gap-2"
+              >
                 <TrendingUp class="h-4 w-4" />
                 Taux d'activation
               </CardTitle>
             </CardHeader>
             <CardContent>
               <p class="text-3xl font-bold">
-                {{ stats.activationRate }}<span class="text-lg font-medium text-muted-foreground">%</span>
+                {{ stats.activationRate
+                }}<span class="text-lg font-medium text-muted-foreground"
+                  >%</span
+                >
               </p>
-              <p class="text-xs text-muted-foreground mt-1">alumni ayant créé son compte</p>
+              <p class="text-xs text-muted-foreground mt-1">
+                alumni ayant créé son compte
+              </p>
             </CardContent>
           </Card>
 
           <Card>
             <CardHeader class="pb-2">
-              <CardTitle class="text-sm font-medium text-muted-foreground flex items-center gap-2">
+              <CardTitle
+                class="text-sm font-medium text-muted-foreground flex items-center gap-2"
+              >
                 <UserPlus class="h-4 w-4" />
                 Répartition
               </CardTitle>
@@ -176,18 +222,23 @@ const statusLabel = (status: string) => {
 
           <Card>
             <CardHeader class="pb-2">
-              <CardTitle class="text-sm font-medium text-muted-foreground flex items-center gap-2">
+              <CardTitle
+                class="text-sm font-medium text-muted-foreground flex items-center gap-2"
+              >
                 <Bell class="h-4 w-4" />
                 Notifications
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <div v-if="requestsLoading" class="flex items-center gap-2 text-xs text-muted-foreground">
+              <div
+                v-if="requestsLoading"
+                class="flex items-center gap-2 text-xs text-muted-foreground"
+              >
                 <Loader2 class="h-3 w-3 animate-spin" />
                 Vérification...
               </div>
               <div v-else-if="pendingRequests && pendingRequests.length > 0">
-                <button 
+                <button
                   class="flex items-center gap-2 text-sm font-medium text-amber-600 hover:underline text-left"
                   @click="router.push('/admin/demandes')"
                 >
@@ -195,7 +246,9 @@ const statusLabel = (status: string) => {
                   {{ pendingRequests.length }} demande(s) en attente
                 </button>
               </div>
-              <p v-else class="text-sm text-muted-foreground">Aucune notification</p>
+              <p v-else class="text-sm text-muted-foreground">
+                Aucune notification
+              </p>
             </CardContent>
           </Card>
         </div>
@@ -221,9 +274,14 @@ const statusLabel = (status: string) => {
                     >
                       {{ a.firstName }} {{ a.lastName }}
                     </button>
-                    <div class="text-xs text-muted-foreground">{{ a.email }}</div>
+                    <div class="text-xs text-muted-foreground">
+                      {{ a.email }}
+                    </div>
                   </div>
-                  <Badge :variant="statusBadgeVariant(a.status)" class="shrink-0 text-xs">
+                  <Badge
+                    :variant="statusBadgeVariant(a.status)"
+                    class="shrink-0 text-xs"
+                  >
                     {{ statusLabel(a.status) }}
                   </Badge>
                 </li>
@@ -247,22 +305,34 @@ const statusLabel = (status: string) => {
                 <CardTitle class="text-base">Accès rapides</CardTitle>
               </CardHeader>
               <CardContent class="flex flex-col gap-2">
-                <Button variant="outline" class="justify-start gap-2" @click="router.push('/annuaire')">
+                <Button
+                  variant="outline"
+                  class="justify-start gap-2"
+                  @click="router.push('/annuaire')"
+                >
                   <Users class="h-4 w-4" />
                   Annuaire
                 </Button>
-                <Button variant="outline" class="justify-start gap-2" @click="router.push('/admin/demandes')">
+                <Button
+                  variant="outline"
+                  class="justify-start gap-2"
+                  @click="router.push('/admin/demandes')"
+                >
                   <FileEdit class="h-4 w-4" />
                   Demandes
                 </Button>
-                <Button variant="outline" class="justify-start gap-2" @click="exportAlumniCsv({})">
+                <Button
+                  variant="outline"
+                  class="justify-start gap-2"
+                  @click="exportAlumniCsv({})"
+                >
                   <Download class="h-4 w-4" />
                   Exporter CSV
                 </Button>
               </CardContent>
             </Card>
 
-            <Card class="opacity-60">
+            <Card>
               <CardHeader>
                 <CardTitle class="text-base flex items-center gap-2">
                   <Calendar class="h-4 w-4" />
@@ -270,11 +340,38 @@ const statusLabel = (status: string) => {
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                <p class="text-sm text-muted-foreground">Bientôt disponible</p>
+                <p
+                  v-if="!upcomingEvents.length"
+                  class="text-sm text-muted-foreground"
+                >
+                  Aucun événement à venir
+                </p>
+                <ul v-else class="divide-y">
+                  <li
+                    v-for="e in upcomingEvents"
+                    :key="e._id"
+                    class="py-2 flex flex-col gap-0.5"
+                  >
+                    <span class="text-sm font-medium">{{ e.title }}</span>
+                    <span
+                      class="text-xs text-muted-foreground flex items-center gap-1"
+                    >
+                      <MapPin class="h-3 w-3" />{{ e.location }}
+                    </span>
+                  </li>
+                </ul>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  class="mt-2 gap-1 text-muted-foreground w-full"
+                  @click="router.push('/admin/events')"
+                >
+                  Voir tous les événements <ArrowRight class="h-3 w-3" />
+                </Button>
               </CardContent>
             </Card>
 
-            <Card class="opacity-60">
+            <Card>
               <CardHeader>
                 <CardTitle class="text-base flex items-center gap-2">
                   <Briefcase class="h-4 w-4" />
@@ -282,7 +379,37 @@ const statusLabel = (status: string) => {
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                <p class="text-sm text-muted-foreground">Bientôt disponible</p>
+                <p
+                  v-if="!activeJobs.length"
+                  class="text-sm text-muted-foreground"
+                >
+                  Aucune annonce active
+                </p>
+                <ul v-else class="divide-y">
+                  <li
+                    v-for="j in activeJobs"
+                    :key="j._id"
+                    class="py-2 flex items-center justify-between gap-2"
+                  >
+                    <div>
+                      <span class="text-sm font-medium">{{ j.title }}</span>
+                      <span class="block text-xs text-muted-foreground">{{
+                        j.company
+                      }}</span>
+                    </div>
+                    <Badge variant="outline" class="shrink-0 text-xs">{{
+                      j.type
+                    }}</Badge>
+                  </li>
+                </ul>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  class="mt-2 gap-1 text-muted-foreground w-full"
+                  @click="router.push('/admin/job-announcements')"
+                >
+                  Voir toutes les annonces <ArrowRight class="h-3 w-3" />
+                </Button>
               </CardContent>
             </Card>
           </div>
@@ -295,12 +422,19 @@ const statusLabel = (status: string) => {
     ─────────────────────────────────────────────────── -->
     <div v-else class="container py-8 space-y-6">
       <div>
-        <h1 class="text-2xl font-bold tracking-tight">Bonjour, {{ firstName }}</h1>
-        <p class="text-muted-foreground text-sm mt-1">Bienvenue sur la plateforme alumnis</p>
+        <h1 class="text-2xl font-bold tracking-tight">
+          Bonjour, {{ firstName }}
+        </h1>
+        <p class="text-muted-foreground text-sm mt-1">
+          Bienvenue sur la plateforme alumnis
+        </p>
       </div>
 
       <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-        <Card class="cursor-pointer hover:shadow-md transition-shadow" @click="router.push('/annuaire')">
+        <Card
+          class="cursor-pointer hover:shadow-md transition-shadow"
+          @click="router.push('/annuaire')"
+        >
           <CardHeader>
             <CardTitle class="flex items-center gap-2">
               <Users class="h-5 w-5 text-primary" />
@@ -320,7 +454,11 @@ const statusLabel = (status: string) => {
 
         <Card
           class="cursor-pointer hover:shadow-md transition-shadow"
-          @click="myAlumniId ? router.push('/annuaire/' + myAlumniId) : router.push('/annuaire')"
+          @click="
+            myAlumniId
+              ? router.push('/annuaire/' + myAlumniId)
+              : router.push('/annuaire')
+          "
         >
           <CardHeader>
             <CardTitle class="flex items-center gap-2">
@@ -339,33 +477,46 @@ const statusLabel = (status: string) => {
           </CardContent>
         </Card>
 
-        <Card class="opacity-60">
+        <Card
+          class="cursor-pointer hover:shadow-md transition-shadow"
+          @click="router.push('/feed')"
+        >
           <CardHeader>
             <CardTitle class="flex items-center gap-2">
-              <Calendar class="h-5 w-5" />
+              <Calendar class="h-5 w-5 text-primary" />
               Événements
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <p class="text-sm text-muted-foreground">
-              Les prochains événements de votre école apparaîtront ici.
+            <p class="text-sm text-muted-foreground mb-4">
+              Découvrez les prochains événements du réseau alumni et indiquez
+              votre participation.
             </p>
-            <p class="text-xs text-muted-foreground mt-3">Bientôt disponible</p>
+            <Button variant="outline" size="sm" class="gap-1">
+              Voir les événements
+              <ArrowRight class="h-3 w-3" />
+            </Button>
           </CardContent>
         </Card>
 
-        <Card class="opacity-60">
+        <Card
+          class="cursor-pointer hover:shadow-md transition-shadow"
+          @click="router.push('/feed')"
+        >
           <CardHeader>
             <CardTitle class="flex items-center gap-2">
-              <Briefcase class="h-5 w-5" />
+              <Briefcase class="h-5 w-5 text-primary" />
               Annonces emploi
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <p class="text-sm text-muted-foreground">
-              Consultez et déposez des offres d'emploi dans le réseau.
+            <p class="text-sm text-muted-foreground mb-4">
+              Consultez les offres d'emploi partagées par le réseau.
             </p>
-            <p class="text-xs text-muted-foreground mt-3">Bientôt disponible</p>
+            <Button variant="outline" size="sm" class="gap-1">
+              Voir les annonces
+              <ArrowRight class="h-3 w-3" />
+            </Button>
           </CardContent>
         </Card>
       </div>

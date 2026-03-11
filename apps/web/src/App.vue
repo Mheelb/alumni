@@ -19,12 +19,16 @@ import {
   LogOut,
   User,
   LayoutDashboard,
-  FileEdit
+  CalendarDays,
+  Briefcase,
+  FileEdit,
+  ChevronDown,
 } from 'lucide-vue-next';
 import { authClient } from '@/lib/auth-client';
 import type { AppUser } from '@/types/user';
 import { useAlumniDetail } from '@/features/alumni/composables/useAlumni';
 import { RouterView, RouterLink, useRouter, useRoute } from 'vue-router';
+import { VueQueryDevtools } from '@tanstack/vue-query-devtools';
 import { useProfileUpdateRequests } from '@/features/alumni/composables/useProfileUpdateRequests';
 import logo from '@/assets/logo.svg';
 
@@ -61,10 +65,10 @@ function getInitials(name: string = '') {
 
         <nav class="flex items-center gap-4">
           <template v-if="session.data?.user">
-            <RouterLink v-if="user?.role === 'admin'" to="/dashboard">
+<RouterLink to="/feed">
               <Button variant="ghost" size="sm" class="hidden sm:flex items-center gap-2">
-                <LayoutDashboard class="h-4 w-4" />
-                Dashboard
+                <CalendarDays class="h-4 w-4" />
+                Feed
               </Button>
             </RouterLink>
             <RouterLink to="/annuaire">
@@ -78,29 +82,39 @@ function getInitials(name: string = '') {
                 Annuaire
               </Button>
             </RouterLink>
-            <template v-if="user?.role === 'admin'">
-              <RouterLink to="/admin/demandes">
-                <Button
-                  :variant="route.path.startsWith('/admin/demandes') ? 'secondary' : 'ghost'"
-                  size="sm"
-                  class="hidden sm:flex items-center gap-2 relative hover:text-primary transition-colors"
-                >
-                  <FileEdit class="h-4 w-4" />
-                  Demandes
+            <DropdownMenu v-if="user?.role === 'admin'">
+              <DropdownMenuTrigger as-child>
+                <Button variant="ghost" size="sm" class="hidden sm:flex items-center gap-2 relative">
+                  <LayoutDashboard class="h-4 w-4" />
+                  Admin
+                  <ChevronDown class="h-3 w-3 opacity-60" />
                   <span v-if="pendingCount > 0" class="absolute top-1 right-1 flex h-2 w-2 rounded-full bg-amber-500" />
                 </Button>
-              </RouterLink>
-              <RouterLink to="/admin/users">
-                <Button
-                  :variant="route.path === '/admin/users' ? 'secondary' : 'ghost'"
-                  size="sm"
-                  class="hidden sm:flex items-center gap-2 hover:text-primary transition-colors"
-                >
-                  <ShieldCheck class="h-4 w-4" />
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="start">
+                <DropdownMenuItem @click="router.push('/dashboard')">
+                  <LayoutDashboard class="mr-2 h-4 w-4" />
+                  Dashboard
+                </DropdownMenuItem>
+                <DropdownMenuItem @click="router.push('/admin/events')">
+                  <CalendarDays class="mr-2 h-4 w-4" />
+                  Événements
+                </DropdownMenuItem>
+                <DropdownMenuItem @click="router.push('/admin/job-announcements')">
+                  <Briefcase class="mr-2 h-4 w-4" />
+                  Annonces
+                </DropdownMenuItem>
+                <DropdownMenuItem @click="router.push('/admin/demandes')" class="relative">
+                  <FileEdit class="mr-2 h-4 w-4" />
+                  Demandes
+                  <span v-if="pendingCount > 0" class="ml-auto flex h-2 w-2 rounded-full bg-amber-500" />
+                </DropdownMenuItem>
+                <DropdownMenuItem @click="router.push('/admin/users')">
+                  <ShieldCheck class="mr-2 h-4 w-4" />
                   Comptes
-                </Button>
-              </RouterLink>
-            </template>
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
           </template>
           <div class="h-6 w-px bg-border hidden sm:block"></div>
           
@@ -156,6 +170,8 @@ function getInitials(name: string = '') {
 
       <RouterView />
     </main>
+
+    <VueQueryDevtools />
 
     <!-- Footer -->
     <footer class="border-t bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 py-6 md:py-0">

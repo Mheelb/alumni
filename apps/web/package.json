@@ -13,6 +13,7 @@
     "@alumni/shared-schema": "workspace:*",
     "@tailwindcss/vite": "^4.1.18",
     "@tanstack/vue-query": "^5.92.9",
+    "@tanstack/vue-query-devtools": "^6.1.5",
     "@tanstack/vue-table": "^8.21.3",
     "@vueuse/core": "^14.2.1",
     "axios": "^1.13.5",
